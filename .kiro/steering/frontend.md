@@ -29,12 +29,17 @@ contract is canonical in `docs/plans/06-data-model-and-contract.md`.
   remembered across sensor updates, never written back to the sensor. The server-provided
   `collapsed` flag is only the auto-collapse-when-empty hint (Req 3.3); it does not override manual
   expand.
+- `No Preference` renders last by default; expose a `no_preference_position` card option
+  (first/last) since it may be the largest group before shop learning kicks in (finding R7-O1).
+- Shop-name-in-text resolution is **whole-word, case-insensitive**. When a user adds a shop whose
+  name is a common English word (e.g. "Fresh"), warn — do not block — since tier-1 matching could
+  otherwise hijack ordinary items (finding R7-L2).
 - Honour `attributes_version`: if the sensor's version is higher than the card supports, degrade
   gracefully (render what is known, show a "please update the card" hint) rather than crashing.
 - Sanctioned calls only: `subscribe_entities` (live updates), `call_service` for `todo.add_item`
   / `todo.update_item` on the source entity, `homeassistant.update_entity` (manual refresh), and
   the integration's own services (`add_category`, `edit_category`, `delete_category`,
-  `recategorize_item`, `reload_category_map`). No bespoke HTTP endpoints.
+  `recategorize_item`, shop services, `reload_maps`). No bespoke HTTP endpoints.
 
 ## Tick / undo state machine (non-negotiable — complete-on-tap)
 

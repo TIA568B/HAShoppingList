@@ -159,7 +159,7 @@ schemas. Summary:
 | `add_shop` | Create a shop (optionally with keyword rules) | 7.1, 7.3 |
 | `edit_shop` | Rename a shop / edit its keyword rules (migrates learned shop overrides) | 7.1, 7.3 |
 | `delete_shop` | Delete a shop; reassign its items to `No Preference` | 7.6 |
-| `reload_category_map` | Force reload of the store + recompute | 6.2 |
+| `reload_maps` | Force reload of the whole store (categories **and** shops) + recompute | 6.2, 7.1 |
 
 Completion/undo/add of *items* use the **native** `todo.update_item` / `todo.add_item`
 directly from the card against the source entity — the integration does not wrap those.

@@ -11,9 +11,9 @@ hashoppinglist/
 │       ├── const.py               # DOMAIN, service names, attr keys, storage keys, defaults
 │       ├── config_flow.py         # config + options flow
 │       ├── coordinator.py         # DataUpdateCoordinator; get_items; builds projection
-│       ├── categorizer.py         # PURE: normalize + match + vegan rules (no HA import)
-│       ├── store.py               # HA Store wrapper for CategoryMap + overrides + migration
-│       ├── models.py              # dataclasses (SourceItem, CategorizedItem, Category, ...)
+│       ├── categorizer.py         # PURE: normalize + category match + vegan rules + shop resolver (no HA import)
+│       ├── store.py               # HA Store wrapper for CategoryMap (categories, overrides, shops, shop_overrides) + migration
+│       ├── models.py              # dataclasses (SourceItem, CategorizedItem, Category, Shop, ...)
 │       ├── sensor.py              # the categorized sensor entity
 │       ├── services.py            # service registration + voluptuous schemas + handlers
 │       ├── diagnostics.py         # redacted diagnostics
@@ -55,11 +55,11 @@ hashoppinglist/
 | `const.py` | Single home for all identifiers/defaults | — |
 | `config_flow.py` | Select source entity; options (grace, toggles) | HA config entries, const |
 | `coordinator.py` | Read source items; call categorizer; hold projection | categorizer, store, models |
-| `categorizer.py` | Pure categorization pipeline + vegan rules | models only |
-| `store.py` | Persist/load/migrate CategoryMap + overrides | HA Store, models |
-| `models.py` | Shared dataclasses/types | — |
+| `categorizer.py` | Pure category pipeline + vegan rules **+ shop resolver** (whole-word matching) | models only |
+| `store.py` | Persist/load/migrate CategoryMap (categories, overrides, **shops, shop_overrides**) | HA Store, models |
+| `models.py` | Shared dataclasses/types (incl. `Shop`) | — |
 | `sensor.py` | Expose projection as attributes; availability | coordinator |
-| `services.py` | Category maintenance + learning services | store, coordinator, const |
+| `services.py` | Category **and shop** maintenance + learning services | store, coordinator, const |
 | `diagnostics.py` | Redacted dump | coordinator, const |
 | `frontend/**` | Card UI + interactions | sensor attrs + services (contract in doc 06) |
 

@@ -15,6 +15,12 @@ replaced by live-list seeding).
 - **Objective:** the deterministic categorization + shop-resolution core + persistence.
 - **Files:** `models.py`, `categorizer.py`, `store.py`, default taxonomy + default shops.
 - **Dependencies:** Phase 0.
+- **First steps (pinned semantics — findings F4-1/F4-2, from followup04):**
+  1. **Matching rule:** both the category and shop resolvers use **whole-word / whole-phrase,
+     case-insensitive** matching — never substring (protects the vegan boundary; see doc 07).
+  2. **Store tolerance:** store `schema_version` is 1 and includes the shop fields; `store.py`
+     injects defaults for any missing top-level key (see doc 06 Migration). Write these two tests
+     first (whole-word traps; missing-shop-keys→defaults).
 - **Acceptance:** categorizer passes the full vegan matrix **and the shop-resolution matrix**
   (doc 12) at 100% coverage — including the precedence (shop-name-in-text > learned override >
   keyword rule > No Preference) and deleted-shop self-heal; store loads default categories +

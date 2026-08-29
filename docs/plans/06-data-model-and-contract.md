@@ -104,8 +104,17 @@ Key: `alexa_shopping_categorizer.<entry_id>` (one store per config entry).
 
 ### Migration
 
-- On load, if `schema_version` < current, run ordered migrators, then persist. v1 defines
-  version 1.
+- **`schema_version` is 1**, and version 1 **includes** `categories`, `overrides`, `shops`, and
+  `shop_overrides` (the shop fields were added during design, before any store shipped — finding
+  F4-1). There is no v0→v1 category-only store in the wild.
+- **Defensive load:** `store.py` must tolerate a store that is missing any top-level key by
+  injecting defaults — `categories`/`shops` default to the seed sets, `overrides`/`shop_overrides`
+  default to `{}` (use `.get(key, default)`, never index). This makes loading an older/partial
+  store safe without a dedicated migrator.
+- On load, if `schema_version` < current, run ordered migrators, then persist. Future schema
+  changes bump `schema_version` and add an ordered migrator + a migration test.
+- The store `schema_version` (persistence) is independent of the sensor `attributes_version`
+  (frontend contract) — see the sensor contract section.
 
 ## Sensor attribute contract (attributes_version 3)
 
@@ -199,6 +208,14 @@ Rules:
   for Req 7, which **restructured** the projection to shop-primary (`shop_groups` replaces the
   top-level `categories`) and added `shop_definitions` and per-item `shop`/`category`. Because the
   top-level shape changed, v3 is a breaking change for the card (the card must read `shop_groups`).
+- **v3 is the initial *shipped* contract** (finding R7-L1): v1 and v2 were internal design
+  iterations only, so there is no v1/v2 card in the wild and no back-compat obligation. The sensor
+  emits exactly one contract version at a time (no dual emission). Record this in the CHANGELOG at
+  first release.
+- **`No Preference` ordering** (finding R7-O1): it renders **last by default**, but this is a card
+  display option (`no_preference_position`, default `last`). Rationale for the option: before shop
+  learning kicks in, `No Preference` may be the largest group, and some users prefer it first. The
+  backend always emits `No Preference` in a stable position; the card may reorder per the option.
 - **`attributes_version` (this frontend contract) and the store `schema_version` (persistence,
   above) are independent counters** — they version different things and need not move together
   (followup02 FO-2).
@@ -275,7 +292,7 @@ delete_shop:
     entry_id: { required: false }
     name: { required: true }
 
-reload_category_map:
+reload_maps:   # reloads the entire store: categories AND shops (finding F4-3)
   fields:
     entry_id: { required: false }
 ```

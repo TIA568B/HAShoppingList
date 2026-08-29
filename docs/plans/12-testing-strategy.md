@@ -28,6 +28,10 @@ steering).
 | categorizer | "free range eggs" | Uncategorized | 1.2 |
 | categorizer | "honey" | Uncategorized | 1.2 |
 | categorizer | "birthday candles" (no kw) | Uncategorized | 1.6, 2.3 |
+| categorizer | "graham crackers" (whole-word) | NOT Fake Meat (no `ham` substring hit) | F4-2 |
+| categorizer | "steak" (whole-word) | NOT Drinks (no `tea` substring hit) | F4-2 |
+| categorizer | "rollmop" (whole-word) | NOT Bakery; Uncategorized (herring is animal) | F4-2 |
+| categorizer | "oat milk" (multi-word keyword) | Milk (whole-phrase match) | 1.3, F4-2 |
 | categorizer | override "birthday candles"→Household | Household (beats keyword/fallback) | 2.4 |
 | categorizer | override→deleted category | falls through to keyword/Uncategorized | 6.3 |
 | categorizer | "nappies" (Aldi keyword rule) | shop == Aldi (independent of category) | 7.3 |
@@ -59,6 +63,7 @@ steering).
 | services | assign_shop | shop_overrides updated + recompute; item.shop changes | 7.2 |
 | services | assign_shop = No Preference | override removed (preference cleared) | 7.5 |
 | services | add_shop duplicate/No Preference | HomeAssistantError (unique; reserved name) | 7.8 |
+| services | add_shop dictionary-word name (e.g. "Fresh") | succeeds but returns/logs a warning (not blocked) | R7-L2 |
 | services | add_shop/edit_shop with keywords | keyword rules persisted + applied on recompute | 7.3 |
 | services | edit_shop rename | shop_overrides pointing at old name migrated to new name | 7.1 |
 | services | delete_shop | shop gone (+ keyword rules), items→No Preference, items not deleted | 7.6 |
@@ -81,7 +86,10 @@ steering).
 | card (js) | manual collapse state persists across sensor update | card-local collapse retained after a live projection refresh | 7.7 |
 | card (js) | shop with all items checked | auto-collapse hint set; user can still manually expand | 7.7, 3.3 |
 | card (js) | set item shop | assign_shop called with item_text + shop | 7.2 |
+| card (js) | shop-settings panel | renders shops + keyword rules from `shop_definitions` | 7.1, R7-O3 |
+| card (js) | No Preference position option | `no_preference_position` = first/last reorders the No Preference group | R7-O1 |
 | migration | store schema_version v0→v1 | migrates + persists | 4 |
+| store | load store lacking `shops`/`shop_overrides` keys | defaults injected (seed shops, empty overrides); no KeyError | F4-1 |
 
 > Note (followup02 FO-2): the store **`schema_version`** (persistence, currently 1) and the sensor
 > **`attributes_version`** (frontend contract, currently 2) version **independently** — they are

@@ -29,6 +29,9 @@ fileMatchPattern: '**/*.py'
   Do not make them `async`. If categorization ever becomes CPU-heavy over a large list, the
   *coordinator* offloads it with `hass.async_add_executor_job` — the categorizer itself stays sync
   (finding L-4 / S-06).
+- **Matching is whole-word / whole-phrase, case-insensitive** for **both** the category and shop
+  resolvers — never substring (substring hits like `ham`→"graham crackers" break the vegan
+  boundary). This is a correctness rule, not a style choice (finding F4-2; see doc 07).
 - Offload CPU-bound or blocking work with `hass.async_add_executor_job`.
 - Guard shared mutable state (grace-period timers, in-flight sync) with `asyncio.Lock`
   where concurrent access is possible.

@@ -22,6 +22,8 @@
   - `source_entity_id`, `last_update_success`, `last_synced`.
   - `category_count`, per-category **counts only** (not contents) by default.
   - `override_count`.
+  - `shop_count`, per-shop **counts only**, and `shop_override_count` (Req 7 dimension — finding
+    F4-4). Counts only by default; redaction unchanged.
   - Item text included **only if** `redact_items_in_diagnostics` option is false.
 - Goal: a diagnostics download is safe to paste into a bug report by default.
 

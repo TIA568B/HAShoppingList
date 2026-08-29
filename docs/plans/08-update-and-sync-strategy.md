@@ -136,5 +136,5 @@ sequenceDiagram
 ## Manual refresh
 
 - Provide `homeassistant.update_entity` on the sensor (standard) and/or a card refresh button
-  that calls `reload_category_map` or requests a coordinator refresh via
+  that calls `reload_maps` or requests a coordinator refresh via
   `homeassistant.update_entity`.

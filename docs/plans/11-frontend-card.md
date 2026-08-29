@@ -62,6 +62,11 @@ stateDiagram-v2
   If the source shows the item was changed/removed on Alexa directly, adopt the source state and
   cancel any local undo affordance for that `uid`. Otherwise, an item in the local undo window
   keeps its optimistic state until the window resolves, so an inbound no-op doesn't clobber the UI.
+- **Optimistic placement is a best-effort guess (finding F4-7):** for a just-typed item the card
+  predicts both shop and category from the text via the pure categorizer, but it cannot see a
+  backend-only learned override (`recategorize_item`/`assign_shop`) until the inbound refresh. So a
+  freshly-added item may **re-pivot once** to a different shop/category when the real projection
+  arrives. This is cosmetic and self-correcting via the add reconciliation below — not a bug.
 - **Add reconciliation (finding REVIEW2-002):** an optimistically-added item carries a client
   token (no `uid` yet); on the next refresh the card adopts the first inbound `needs_action` item
   whose normalized summary matches, taking over its real `uid`. Unmatched placeholders are dropped

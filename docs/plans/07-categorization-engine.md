@@ -36,12 +36,17 @@ flowchart LR
 
 ### 3. Keyword match
 
-- For each category in order, test whether any keyword is a whole-word/substring match of the
-  normalized text. First match wins (category order is significant — put more specific
+- For each category in order, test whether any keyword matches the normalized text as a
+  **whole word / whole phrase, case-insensitive** (a multi-word keyword like "oat milk" matches as
+  a contiguous token sequence). First match wins (category order is significant — put more specific
   categories earlier, e.g. `Fake Meat` before generic `Pantry`).
-- Start with **substring/word matching (stdlib only)**. Only if match quality proves poor
-  should fuzzy matching (`difflib.get_close_matches`, still stdlib) be added — documented as a
-  later enhancement, behind the same pure interface.
+- **Whole-word matching is mandatory, not substring** (finding F4-2). Substring matching would
+  mis-categorize across the vegan boundary and beyond: `ham` (Fake Meat) would hit "**gra**ham
+  crackers"/"c**ham**omile"; `tea` (Drinks) would hit "s**tea**k"; `roll` (Bakery) would hit
+  "**roll**mop" (pickled herring, which must stay animal/Uncategorized). This matches the shop
+  resolver, which is also whole-word — the two resolvers use the **same** matching rule.
+- `difflib.get_close_matches` fuzzy matching remains an explicitly **deferred** enhancement, behind
+  the same pure interface; whole-word exact matching is the v1 behaviour.
 
 ### 4. Fallback
 
@@ -99,7 +104,12 @@ On first setup:
 
 Shop preference is a second pure lookup, resolved for each item **independently** of its category
 (one normalize pass feeds both). It lives in the same pure module (no HA import). Resolution
-applies a strict **precedence** (Req 7 precedence list):
+applies a strict **precedence** (Req 7 precedence list).
+
+> **Note (finding F4-6):** unlike the category resolver — where a learned override is highest
+> precedence — the shop resolver's tier 1 (shop-name-in-text) **intentionally outranks** the
+> learned override. This asymmetry is deliberate (naming the shop in the item text is the most
+> explicit signal). Do not "harmonise" the two resolvers; the difference is by design.
 
 ```mermaid
 flowchart TD
@@ -127,8 +137,16 @@ flowchart TD
 
 ### Notes
 
-- Shop-name matching (tier 1) tests each configured shop's **name** as a whole word in the item
-  text, so "Tesco" in "tesco nappies" matches but "asda" inside an unrelated word does not.
+- Shop-name matching (tier 1) tests each configured shop's **name** as a **whole word,
+  case-insensitive** token in the item text, so "Tesco" in "tesco nappies" matches but "asda"
+  inside an unrelated word does not.
+- **Collision care for dictionary-word shop names (finding R7-L2):** the default shops
+  (Aldi/Asda/Tesco) are safe, but a user could add a shop whose name is a common word (e.g.
+  "Fresh", "Local"), which would let tier 1 hijack ordinary items ("fresh bread" → shop "Fresh").
+  Mitigations: (a) tier-1 matching is whole-word only (already); (b) `add_shop`/`edit_shop`
+  **warn (not block)** when a new shop name is a common English word; (c) as a possible refinement,
+  scope tier-1 matching to a leading/trailing token of the item text. This is a documented edge,
+  not a v1 blocker.
 - Assigning a shop via the card writes a learned override (tier 2). Assigning `No Preference`
   **removes** the override, so the item falls back to keyword rules / No Preference.
 - Default shops on first setup: `Aldi`, `Asda`, `Tesco` plus implicit `No Preference`, seeded with

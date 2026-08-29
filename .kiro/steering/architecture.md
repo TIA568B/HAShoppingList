@@ -24,7 +24,7 @@ alexa_shopping_categorizer (this integration)
   ├── store            → persists category map + shop map + learned overrides (HA Store helper)
   ├── sensor entity    → sensor.<name>_categorized: derived JSON projection (category + shop)
   ├── services         → recategorize_item, add_category, edit_category, delete_category,
-  │                      assign_shop, add_shop, edit_shop, delete_shop, reload_category_map
+  │                      assign_shop, add_shop, edit_shop, delete_shop, reload_maps
   └── diagnostics      → redacted config + state dump
         │
         ▼
