@@ -24,10 +24,10 @@ fileMatchPattern: '**/*.py'
 ## Async patterns
 
 - Public integration functions are `async`. Never call blocking I/O directly in the loop.
-- **Exception — the categorizer is intentionally synchronous and pure.** `categorizer.py` has no
+- **Exception — the categoriser is intentionally synchronous and pure.** `categoriser.py` has no
   `homeassistant` import and no I/O, so its functions are plain `def`, unit-testable standalone.
-  Do not make them `async`. If categorization ever becomes CPU-heavy over a large list, the
-  *coordinator* offloads it with `hass.async_add_executor_job` — the categorizer itself stays sync
+  Do not make them `async`. If categorisation ever becomes CPU-heavy over a large list, the
+  *coordinator* offloads it with `hass.async_add_executor_job` — the categoriser itself stays sync
   (finding L-4 / S-06).
 - **Matching is whole-word / whole-phrase, case-insensitive** for **both** the category and shop
   resolvers — never substring (substring hits like `ham`→"graham crackers" break the vegan
@@ -39,7 +39,7 @@ fileMatchPattern: '**/*.py'
 
 ## Code organization
 
-- Keep the pure categorization logic (`categorizer.py`) free of any `homeassistant` import so
+- Keep the pure categorisation logic (`categoriser.py`) free of any `homeassistant` import so
   it can be unit-tested standalone.
 - One responsibility per module (see architecture steering table).
 - **Favour small, focused modules over a single large file.** If a module grows past a few
@@ -51,7 +51,7 @@ fileMatchPattern: '**/*.py'
 
 ## Dependency management
 
-- Prefer the standard library. The categorizer should need no third-party packages; if fuzzy
+- Prefer the standard library. The categoriser should need no third-party packages; if fuzzy
   matching is added, prefer `difflib` (stdlib) before pulling in `rapidfuzz` or similar.
 - Any third-party requirement must be pinned in `manifest.json` `requirements` with an exact
   version and justified in the PR and design doc.
@@ -61,13 +61,13 @@ fileMatchPattern: '**/*.py'
 - Catch narrow exceptions, never bare `except:`.
 - Convert low-level failures into `HomeAssistantError` (or subclasses) at the service
   boundary with a translatable message.
-- Fail loud in logs, degrade gracefully in behavior (e.g. unmatched item -> `Uncategorized`,
+- Fail loud in logs, degrade gracefully in behavior (e.g. unmatched item -> `Uncategorised`,
   never crash the coordinator).
 
 ## Logging
 
 - Module-level logger: `_LOGGER = logging.getLogger(__name__)`.
-- `debug` for per-item categorization decisions and sync detail; `info` sparingly; `warning`
+- `debug` for per-item categorisation decisions and sync detail; `info` sparingly; `warning`
   for recoverable sync failures; `error` for exhausted retries.
 - For **what may be logged at which level** (item text at `debug` only; never credentials/full
   contents at `info`+), follow the canonical rule in `security.md` — do not restate it here

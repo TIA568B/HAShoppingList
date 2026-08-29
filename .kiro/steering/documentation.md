@@ -9,7 +9,7 @@ fileMatchPattern: '**/*.md'
 
 - `README.md`: what the integration does, prerequisites (core `alexa_devices` configured,
   HACS), install steps, config-flow walkthrough, the card setup, and the vegan
-  categorization rules.
+  categorisation rules.
 - `docs/plans/`: the technical design (source of truth for implementation). Keep it updated
   when the design changes.
 - `docs/specs/`: original requirements/design/tasks. These are historical source-of-truth

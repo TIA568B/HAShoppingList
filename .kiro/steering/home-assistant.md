@@ -5,12 +5,12 @@ fileMatchPattern: 'custom_components/**'
 
 # Home Assistant Development Steering
 
-Applies to all code under `custom_components/alexa_shopping_categorizer/` and its tests.
+Applies to all code under `custom_components/alexa_shopping_categoriser/` and its tests.
 Follow current (2025-2026) Home Assistant core integration conventions.
 
 ## Integration structure
 
-- Domain: `alexa_shopping_categorizer`. Keep it consistent across `manifest.json`,
+- Domain: `alexa_shopping_categoriser`. Keep it consistent across `manifest.json`,
   `const.py` (`DOMAIN`), config entries, and translations.
 - `manifest.json` must include: `domain`, `name`, `version` (required for custom
   components), `codeowners`, `config_flow: true`, `iot_class: calculated`,
@@ -43,8 +43,8 @@ Follow current (2025-2026) Home Assistant core integration conventions.
   `update_interval` is a slow safety-net poll (e.g. 15 minutes) that calls `todo.get_items`.
 - The coordinator's data is the computed **`Projection`** as defined in
   `docs/plans/06-data-model-and-contract.md` (ordered categories with `collapsed`, plus top-level
-  `total_unchecked`, `uncategorized_count`, `last_synced`, `options`, `category_definitions`,
-  `attributes_version`). Do not model it as a bare `dict[str, list[CategorizedItem]]` — that loses
+  `total_unchecked`, `uncategorised_count`, `last_synced`, `options`, `category_definitions`,
+  `attributes_version`). Do not model it as a bare `dict[str, list[CategorisedItem]]` — that loses
   order, collapse state, and metadata (finding L-5 / S-07).
 - Read source items via the `todo.get_items` service with
   `data: {status: [needs_action, completed]}` and `return_response=True`. The response is keyed by
@@ -55,12 +55,12 @@ Follow current (2025-2026) Home Assistant core integration conventions.
 
 ## Entity design
 
-- One `sensor` entity: `sensor.<config_entry_slug>_categorized`.
-  - `unique_id` = `f"{entry.entry_id}_categorized"`. Never derive unique IDs from names or
+- One `sensor` entity: `sensor.<config_entry_slug>_categorised`.
+  - `unique_id` = `f"{entry.entry_id}_categorised"`. Never derive unique IDs from names or
     entity IDs that can change.
   - State = total unchecked item count (numeric, `state_class` not set — it is not a
     measurement to record long-term; consider excluding from recorder).
-  - Attributes = the categorized projection (see the frontend contract) plus `last_synced`.
+  - Attributes = the categorised projection (see the frontend contract) plus `last_synced`.
   - `should_poll = False`; updates come from the coordinator.
   - Availability follows `coordinator.last_update_success` and the source entity being
     available/known.
@@ -71,19 +71,19 @@ Follow current (2025-2026) Home Assistant core integration conventions.
 ## Services
 
 - Define services in `services.yaml` with full field metadata and translations.
-- Services: `recategorize_item`, `add_category`, `edit_category`, `delete_category`,
+- Services: `recategorise_item`, `add_category`, `edit_category`, `delete_category`,
   `assign_shop`, `add_shop`, `edit_shop`, `delete_shop`, `reload_maps` (reloads the whole store —
   categories and shops). Validate all input with voluptuous schemas.
-- `delete_category` must reassign affected items to `Uncategorized`, never delete items.
+- `delete_category` must reassign affected items to `Uncategorised`, never delete items.
   `delete_shop` must reassign affected items to `No Preference`, never delete items (Req 7.6).
 - `edit_category`/`edit_shop` rename must migrate learned overrides pointing at the old name to the
   new name, so a rename does not silently discard learning (finding REVIEW2-003). `add_shop`/
   `edit_shop` also set/replace the shop's keyword rules (Req 7.3) and reject the reserved
   `No Preference` (Req 7.8).
 - `assign_shop` persists a learned shop override (normalized item text → shop) mirroring
-  `recategorize_item`; `No Preference` clears it. The resolution **precedence** (shop name in item
+  `recategorise_item`; `No Preference` clears it. The resolution **precedence** (shop name in item
   text > learned override > keyword rule > No Preference — shop-name-in-text beats a learned
-  override) lives in the pure categorizer, not in services. The projection is grouped
+  override) lives in the pure categoriser, not in services. The projection is grouped
   **shop-primary, then category** (Req 7.7).
 - These are **config-entry-scoped** services operating on the shared category map, targeted by an
   optional `entry_id` (`config_entry` selector) — **not** entity services. Do not register them

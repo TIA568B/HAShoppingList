@@ -17,16 +17,16 @@ Applies to backend tests under `tests/**` and to the card's own tests under `fro
 
 ## Coverage expectations
 
-- The pure `categorizer` module: **100%** line and branch coverage. It is the behavioral
+- The pure `categoriser` module: **100%** line and branch coverage. It is the behavioral
   core and has no HA dependency, so there is no excuse for gaps.
 - Overall integration: target **>=90%** line coverage; every config/options flow step,
   service, and error branch must be exercised.
 
 ## Required test areas
 
-- **Categorizer (pure):** normalization, keyword match, milk->Milk, dairy->Chilled,
-  meat->Fake Meat, animal-derived/egg/fish->Uncategorized, learned-override precedence,
-  no-match->Uncategorized, empty/odd input. **Shop resolution (Req 7) precedence:** shop-name-in-text
+- **Categoriser (pure):** normalization, keyword match, milk->Milk, dairy->Chilled,
+  meat->Fake Meat, animal-derived/egg/fish->Uncategorised, learned-override precedence,
+  no-match->Uncategorised, empty/odd input. **Shop resolution (Req 7) precedence:** shop-name-in-text
   (beats learned override) -> learned override -> keyword rule -> No Preference; deleted-shop
   self-heals to No Preference; shop independent of category.
 - **Config flow:** happy path (select source todo entity), abort on no todo entities, abort
@@ -41,8 +41,8 @@ Applies to backend tests under `tests/**` and to the card's own tests under `fro
 - **Sensor:** attribute schema matches the documented frontend contract exactly (currently
   `attributes_version: 3`, including `category_definitions`, `shops`, and per-item `shop`);
   availability reflects coordinator + source state.
-- **Services:** `recategorize_item` persists a learned override and re-runs; `delete_category`
-  reassigns to `Uncategorized` (never deletes items); `edit_category` rename **migrates learned
+- **Services:** `recategorise_item` persists a learned override and re-runs; `delete_category`
+  reassigns to `Uncategorised` (never deletes items); `edit_category` rename **migrates learned
   overrides** to the new name; add/edit validate input; invalid input raises. **Shop services
   (Req 7):** `assign_shop` learns a shop (and `No Preference` clears it); `delete_shop` reassigns
   to `No Preference` (never deletes items); `edit_shop` rename migrates shop overrides;

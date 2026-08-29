@@ -7,9 +7,9 @@ The integration attaches its entities to a single **service device** in the devi
 | Field | Value |
 |-------|-------|
 | identifiers | `{(DOMAIN, entry.entry_id)}` |
-| name | "Alexa Shopping List Categorizer" |
-| manufacturer | "alexa_shopping_categorizer" |
-| model | "Shopping List Categorizer" |
+| name | "Alexa Shopping List Categoriser" |
+| manufacturer | "alexa_shopping_categoriser" |
+| model | "Shopping List Categoriser" |
 | entry_type | `DeviceEntryType.SERVICE` |
 | via_device | *(none — it is a derived service, not a child of the Alexa device)* |
 
@@ -19,15 +19,15 @@ the config flow.
 
 ## Entities
 
-### sensor: Categorized Shopping List
+### sensor: Categorised Shopping List
 
 | Attribute | Value |
 |-----------|-------|
 | Platform | `sensor` |
 | Purpose | Expose the derived category-grouped projection for the card to render |
-| Entity id | `sensor.<entry_slug>_categorized` (e.g. `sensor.alexa_shopping_list_categorized`) |
-| Unique ID | `f"{entry.entry_id}_categorized"` — stable, name-independent |
-| Suggested name | "Categorized Shopping List" |
+| Entity id | `sensor.<entry_slug>_categorised` (e.g. `sensor.alexa_shopping_list_categorised`) |
+| Unique ID | `f"{entry.entry_id}_categorised"` — stable, name-independent |
+| Suggested name | "Categorised Shopping List" |
 | Device class | none (not a standard measurement) |
 | State class | none (do **not** set `measurement`; not for long-term statistics) |
 | Native value (state) | Count of **unchecked** items across all categories (int) |
@@ -41,10 +41,10 @@ the config flow.
 
 #### Attributes (the frontend contract — canonical definition in doc 06)
 
-- `shop_groups`: **primary** structure — ordered list of shop objects `{ name, collapsed, categories: [{ name, collapsed, items: [{uid, name, checked, shop, category}] }] }`; `No Preference` last, `Uncategorized` last within each shop (Req 7.7).
+- `shop_groups`: **primary** structure — ordered list of shop objects `{ name, collapsed, categories: [{ name, collapsed, items: [{uid, name, checked, shop, category}] }] }`; `No Preference` last, `Uncategorised` last within each shop (Req 7.7).
 - `category_definitions`: ordered list of `{ name, keywords }` for the category-settings panel (Req 6.1).
 - `shop_definitions`: ordered list of `{ name, keywords }` for the shop-settings panel (Req 7.1); `No Preference` implicit.
-- `uncategorized_count`: int.
+- `uncategorised_count`: int.
 - `total_unchecked`: int (mirrors state).
 - `source_entity_id`: str.
 - `last_synced`: ISO 8601 timestamp.
@@ -62,7 +62,7 @@ design keeps the `alexa_devices` list as the **single** write target and exposes
 
 ## Naming & conflict avoidance (from read-only MCP findings)
 
-- The chosen entity id `sensor.<entry_slug>_categorized` does not collide with existing
+- The chosen entity id `sensor.<entry_slug>_categorised` does not collide with existing
   entities (`todo.shopping_list`, the two `alexa_devices` todo entities, or the `bed_time`
   button).
 - The integration does not create or rename any Alexa-owned entity, avoiding conflict with

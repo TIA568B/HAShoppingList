@@ -37,7 +37,7 @@ sequenceDiagram
     SRC-->>CO: state_changed event
     CO->>SRC: todo.get_items (needs_action+completed, return_response)
     SRC-->>CO: items
-    CO->>CO: build projection (categorizer)
+    CO->>CO: build projection (categoriser)
     CO->>SEN: update attributes
     SEN-->>Card: state subscription push
     Card->>Card: re-render

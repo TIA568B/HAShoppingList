@@ -3,7 +3,7 @@
 ## Principles
 
 - Never drop a user change silently (Req 5.4).
-- Degrade gracefully: an unmatched or problematic item becomes `Uncategorized`; the coordinator
+- Degrade gracefully: an unmatched or problematic item becomes `Uncategorised`; the coordinator
   never crashes on one bad item.
 - Fail loud in logs, visible to the user only when action is needed.
 

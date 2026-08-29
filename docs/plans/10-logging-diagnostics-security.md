@@ -6,7 +6,7 @@
 
 | Level | Used for |
 |-------|----------|
-| debug | Per-item categorization decisions, sync payloads, coordinator refresh detail, item text |
+| debug | Per-item categorisation decisions, sync payloads, coordinator refresh detail, item text |
 | info | Setup/unload milestones (sparingly) |
 | warning | Recoverable sync failures, retries, source entity temporarily unavailable |
 | error | Exhausted retries, corrupt store, unexpected exceptions |
@@ -46,6 +46,6 @@
 ## Residual risks
 
 - Best-effort vegan filtering can mis-handle hidden animal ingredients (accepted, NFR4;
-  mitigated by routing ambiguous items to `Uncategorized`).
+  mitigated by routing ambiguous items to `Uncategorised`).
 - If the user enables item text in diagnostics, that download contains personal data — clearly
   labelled; default is redacted.

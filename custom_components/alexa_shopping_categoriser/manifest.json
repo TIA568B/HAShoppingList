@@ -1,0 +1,13 @@
+{
+  "domain": "alexa_shopping_categoriser",
+  "name": "Alexa Shopping List Categoriser",
+  "version": "0.1.0",
+  "codeowners": ["@davidcarson"],
+  "config_flow": true,
+  "dependencies": ["todo"],
+  "documentation": "https://github.com/davidcarson/alexa_shopping_categoriser",
+  "iot_class": "calculated",
+  "integration_type": "service",
+  "issue_tracker": "https://github.com/davidcarson/alexa_shopping_categoriser/issues",
+  "requirements": []
+}

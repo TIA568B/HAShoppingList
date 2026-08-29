@@ -1,22 +1,22 @@
 # 04 — Home Assistant Integration Design
 
-Domain: **`alexa_shopping_categorizer`**. Config-entry only (no YAML). Follows current HA core
+Domain: **`alexa_shopping_categoriser`**. Config-entry only (no YAML). Follows current HA core
 integration conventions.
 
 ## manifest.json
 
 ```jsonc
 {
-  "domain": "alexa_shopping_categorizer",
-  "name": "Alexa Shopping List Categorizer",
+  "domain": "alexa_shopping_categoriser",
+  "name": "Alexa Shopping List Categoriser",
   "version": "0.1.0",
   "codeowners": ["@davidcarson"],
   "config_flow": true,
   "dependencies": ["todo"],
-  "documentation": "https://github.com/<owner>/alexa_shopping_categorizer",
+  "documentation": "https://github.com/<owner>/alexa_shopping_categoriser",
   "iot_class": "calculated",
   "integration_type": "service",
-  "issue_tracker": "https://github.com/<owner>/alexa_shopping_categorizer/issues",
+  "issue_tracker": "https://github.com/<owner>/alexa_shopping_categoriser/issues",
   "requirements": []
 }
 ```
@@ -130,7 +130,7 @@ set. No user-facing string is hard-coded in flow logic. (Finding L-8 / S-09.)
      Read the list at `response[source_entity_id]["items"]`. (Finding REVIEW2-001.)
   3. Normalize each item into a `SourceItem` dataclass: `name = item["summary"]`,
      `uid = item["uid"]`, `completed = item["status"] == "completed"`.
-  4. Run `categorizer.build_projection(items, category_map, overrides, options)`.
+  4. Run `categoriser.build_projection(items, category_map, overrides, options)`.
   5. Return the `Projection`.
 - **First-refresh readiness vs. read failure:** if the source entity is absent or
   `unavailable`/`unknown` at first refresh, raise `ConfigEntryNotReady` (HA retries setup). A
@@ -151,10 +151,10 @@ schemas. Summary:
 
 | Service | Purpose | Req |
 |---------|---------|-----|
-| `recategorize_item` | Set/learn a category for an item's normalized text; re-run | 2.4, 6.2 |
+| `recategorise_item` | Set/learn a category for an item's normalized text; re-run | 2.4, 6.2 |
 | `add_category` | Create a category (optionally with keywords) | 6.1, 6.2 |
 | `edit_category` | Rename a category / edit its keywords | 6.2 |
-| `delete_category` | Delete a category; reassign its items to `Uncategorized` | 6.3 |
+| `delete_category` | Delete a category; reassign its items to `Uncategorised` | 6.3 |
 | `assign_shop` | Set/learn (or clear via `No Preference`) an item's shop; re-run | 7.2, 7.5 |
 | `add_shop` | Create a shop (optionally with keyword rules) | 7.1, 7.3 |
 | `edit_shop` | Rename a shop / edit its keyword rules (migrates learned shop overrides) | 7.1, 7.3 |
@@ -167,7 +167,7 @@ directly from the card against the source entity — the integration does not wr
 ## Events
 
 - No custom bus events required for v1. The sensor state change is the frontend's signal. (A
-  future `alexa_shopping_categorizer_sync_failed` event is possible but doc 09 uses a persistent
+  future `alexa_shopping_categoriser_sync_failed` event is possible but doc 09 uses a persistent
   notification / repair issue instead.)
 
 ## WebSocket / HTTP APIs

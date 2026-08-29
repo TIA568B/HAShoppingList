@@ -5,21 +5,21 @@ fileMatchPattern: 'frontend/**'
 
 # Frontend (Custom Lovelace Card) Steering
 
-Applies to the bundled custom card under `frontend/alexa-shopping-categorizer-card/`. The card is
+Applies to the bundled custom card under `frontend/alexa-shopping-categoriser-card/`. The card is
 the most requirement-dense and security-sensitive component (Req 3.x, 4.x, 5.4), so it gets
 first-class guardrails here. Detailed design lives in `docs/plans/11-frontend-card.md`; the
 contract is canonical in `docs/plans/06-data-model-and-contract.md`.
 
 ## Contract with the backend
 
-- The card is a **client** of two public surfaces only: the categorized **sensor attributes**
+- The card is a **client** of two public surfaces only: the categorised **sensor attributes**
   (canonical schema in `docs/plans/06`) and documented HA services. It holds no private contract
   with Python internals.
 - Read categories/keywords for the settings panel from the sensor's `category_definitions`
   attribute (Req 6.1), and shops/keyword-rules from `shop_definitions` (Req 7.1). Do not invent a
   private read path.
 - **Shop preference (Req 7):** render a **two-level tree — shop → category (aisle) → items** from
-  `shop_groups` (`No Preference` last; `Uncategorized` last within each shop). Each item shows its
+  `shop_groups` (`No Preference` last; `Uncategorised` last within each shop). Each item shows its
   `category`. Shop assignment via `assign_shop` (`No Preference` clears it); shop management via
   `add_shop`/`edit_shop`/`delete_shop` (name + keyword rules). Shop is independent of category — do
   not derive one from the other.
@@ -39,7 +39,7 @@ contract is canonical in `docs/plans/06-data-model-and-contract.md`.
 - Sanctioned calls only: `subscribe_entities` (live updates), `call_service` for `todo.add_item`
   / `todo.update_item` on the source entity, `homeassistant.update_entity` (manual refresh), and
   the integration's own services (`add_category`, `edit_category`, `delete_category`,
-  `recategorize_item`, shop services, `reload_maps`). No bespoke HTTP endpoints.
+  `recategorise_item`, shop services, `reload_maps`). No bespoke HTTP endpoints.
 
 ## Tick / undo state machine (non-negotiable — complete-on-tap)
 

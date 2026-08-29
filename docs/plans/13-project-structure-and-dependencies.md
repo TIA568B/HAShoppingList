@@ -5,16 +5,16 @@
 ```
 hashoppinglist/
 ├── custom_components/
-│   └── alexa_shopping_categorizer/
+│   └── alexa_shopping_categoriser/
 │       ├── __init__.py            # setup/unload/reload, runtime_data, listener wiring
 │       ├── manifest.json          # domain, deps=[todo], version, iot_class=calculated
 │       ├── const.py               # DOMAIN, service names, attr keys, storage keys, defaults
 │       ├── config_flow.py         # config + options flow
 │       ├── coordinator.py         # DataUpdateCoordinator; get_items; builds projection
-│       ├── categorizer.py         # PURE: normalize + category match + vegan rules + shop resolver (no HA import)
+│       ├── categoriser.py         # PURE: normalize + category match + vegan rules + shop resolver (no HA import)
 │       ├── store.py               # HA Store wrapper for CategoryMap (categories, overrides, shops, shop_overrides) + migration
-│       ├── models.py              # dataclasses (SourceItem, CategorizedItem, Category, Shop, ...)
-│       ├── sensor.py              # the categorized sensor entity
+│       ├── models.py              # dataclasses (SourceItem, CategorisedItem, Category, Shop, ...)
+│       ├── sensor.py              # the categorised sensor entity
 │       ├── services.py            # service registration + voluptuous schemas + handlers
 │       ├── diagnostics.py         # redacted diagnostics
 │       ├── services.yaml          # service field metadata
@@ -22,13 +22,13 @@ hashoppinglist/
 │       └── translations/
 │           └── en.json
 ├── frontend/
-│   └── alexa-shopping-categorizer-card/
+│   └── alexa-shopping-categoriser-card/
 │       ├── src/                   # card source (TS/JS)
 │       ├── dist/                  # built asset served by the integration
 │       └── package.json
 ├── tests/
 │   ├── conftest.py
-│   ├── test_categorizer.py        # 100% target
+│   ├── test_categoriser.py        # 100% target
 │   ├── test_config_flow.py
 │   ├── test_options_flow.py
 │   ├── test_coordinator.py
@@ -54,8 +54,8 @@ hashoppinglist/
 | `__init__.py` | Entry setup/unload/reload; wire store→coordinator→sensor→services; state listener | coordinator, store, services |
 | `const.py` | Single home for all identifiers/defaults | — |
 | `config_flow.py` | Select source entity; options (grace, toggles) | HA config entries, const |
-| `coordinator.py` | Read source items; call categorizer; hold projection | categorizer, store, models |
-| `categorizer.py` | Pure category pipeline + vegan rules **+ shop resolver** (whole-word matching) | models only |
+| `coordinator.py` | Read source items; call categoriser; hold projection | categoriser, store, models |
+| `categoriser.py` | Pure category pipeline + vegan rules **+ shop resolver** (whole-word matching) | models only |
 | `store.py` | Persist/load/migrate CategoryMap (categories, overrides, **shops, shop_overrides**) | HA Store, models |
 | `models.py` | Shared dataclasses/types (incl. `Shop`) | — |
 | `sensor.py` | Expose projection as attributes; availability | coordinator |

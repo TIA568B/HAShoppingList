@@ -1,0 +1,127 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Select the Alexa shopping list",
+        "description": "Choose the todo list provided by the Alexa Devices integration to categorise.",
+        "data": {
+          "source_entity_id": "Source shopping list"
+        }
+      },
+      "reconfigure": {
+        "title": "Change the source shopping list",
+        "description": "Point the categoriser at a different Alexa todo list. Your learned categories and shops are preserved.",
+        "data": {
+          "source_entity_id": "Source shopping list"
+        }
+      }
+    },
+    "abort": {
+      "no_alexa_lists": "No todo lists from the Alexa Devices integration were found. Set up the Alexa Devices integration first.",
+      "already_configured": "This shopping list is already configured.",
+      "reconfigure_successful": "The source shopping list was changed successfully."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Display options",
+        "data": {
+          "grace_period_seconds": "Undo window (seconds)",
+          "show_completed": "Show completed items",
+          "collapse_empty_categories": "Collapse categories with no remaining items",
+          "redact_items_in_diagnostics": "Redact item text in diagnostics"
+        }
+      }
+    }
+  },
+  "services": {
+    "recategorise_item": {
+      "name": "Recategorise item",
+      "description": "Learn a category for an item's text so future identical items match it.",
+      "fields": {
+        "entry_id": { "name": "Config entry", "description": "Target config entry (optional if only one exists)." },
+        "item_text": { "name": "Item text", "description": "The item text to learn a category for." },
+        "category": { "name": "Category", "description": "The category to assign. Use Uncategorised to clear the learned category." },
+        "apply_to_uid": { "name": "Apply to UID", "description": "Optionally re-run immediately for this item UID." }
+      }
+    },
+    "add_category": {
+      "name": "Add category",
+      "description": "Create a new category, optionally with keywords.",
+      "fields": {
+        "entry_id": { "name": "Config entry", "description": "Target config entry (optional if only one exists)." },
+        "name": { "name": "Name", "description": "The category name." },
+        "keywords": { "name": "Keywords", "description": "List of whole-word keywords." }
+      }
+    },
+    "edit_category": {
+      "name": "Edit category",
+      "description": "Rename a category and/or replace its keywords. A rename migrates learned corrections.",
+      "fields": {
+        "entry_id": { "name": "Config entry", "description": "Target config entry (optional if only one exists)." },
+        "name": { "name": "Name", "description": "The existing category name." },
+        "new_name": { "name": "New name", "description": "Optional new name for the category." },
+        "keywords": { "name": "Keywords", "description": "Optional replacement keyword list." }
+      }
+    },
+    "delete_category": {
+      "name": "Delete category",
+      "description": "Delete a category. Its items move to Uncategorised; items are never deleted.",
+      "fields": {
+        "entry_id": { "name": "Config entry", "description": "Target config entry (optional if only one exists)." },
+        "name": { "name": "Name", "description": "The category to delete." }
+      }
+    },
+    "assign_shop": {
+      "name": "Assign shop",
+      "description": "Learn a shop preference for an item's text. Use No Preference to clear it.",
+      "fields": {
+        "entry_id": { "name": "Config entry", "description": "Target config entry (optional if only one exists)." },
+        "item_text": { "name": "Item text", "description": "The item text to assign a shop to." },
+        "shop": { "name": "Shop", "description": "The shop to assign, or No Preference to clear." },
+        "apply_to_uid": { "name": "Apply to UID", "description": "Optionally re-run immediately for this item UID." }
+      }
+    },
+    "add_shop": {
+      "name": "Add shop",
+      "description": "Create a new shop, optionally with keyword rules.",
+      "fields": {
+        "entry_id": { "name": "Config entry", "description": "Target config entry (optional if only one exists)." },
+        "name": { "name": "Name", "description": "The shop name (not No Preference)." },
+        "keywords": { "name": "Keyword rules", "description": "List of whole-word keyword rules." }
+      }
+    },
+    "edit_shop": {
+      "name": "Edit shop",
+      "description": "Rename a shop and/or replace its keyword rules. A rename migrates learned assignments.",
+      "fields": {
+        "entry_id": { "name": "Config entry", "description": "Target config entry (optional if only one exists)." },
+        "name": { "name": "Name", "description": "The existing shop name." },
+        "new_name": { "name": "New name", "description": "Optional new name for the shop." },
+        "keywords": { "name": "Keyword rules", "description": "Optional replacement keyword-rule list." }
+      }
+    },
+    "delete_shop": {
+      "name": "Delete shop",
+      "description": "Delete a shop. Its items move to No Preference; items are never deleted.",
+      "fields": {
+        "entry_id": { "name": "Config entry", "description": "Target config entry (optional if only one exists)." },
+        "name": { "name": "Name", "description": "The shop to delete." }
+      }
+    },
+    "reload_maps": {
+      "name": "Reload maps",
+      "description": "Reload the stored categories and shops from disk and recompute.",
+      "fields": {
+        "entry_id": { "name": "Config entry", "description": "Target config entry (optional if only one exists)." }
+      }
+    }
+  },
+  "issues": {
+    "source_entity_missing": {
+      "title": "Alexa shopping list source is unavailable",
+      "description": "The configured source todo list ({entity_id}) is missing or unavailable. Check that the Alexa Devices integration is set up and connected."
+    }
+  }
+}

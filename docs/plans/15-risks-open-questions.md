@@ -7,8 +7,8 @@
 | R1 | `alexa_devices` write services don't propagate reliably to the real Alexa app | High (core sync fails) | Low–Med | Retry/backoff + visible errors; **Phase 2.5 early manual spike** + Phase 7 E2E validate | Validate in the Phase 2.5 spike *before* card work (finding M-6); if broken, raise upstream, keep read-only view meanwhile |
 | R2 | Item `uid`s not stable across syncs | High (undo/complete target wrong item) | Low | Source uses uid as key; verify in Phase 2.5 spike + E2E; reconcile by uid | Proceed; validate in Phase 2.5 |
 | R3 | Reactivity slower than "a few seconds" if push missed | Med (stale view) | Med | 15-min safety poll + manual refresh + last_synced banner; two-tier latency contract documented (doc 08) | Accept; up to ~5 min worst case — confirm with user (M-5) |
-| R4 | Vegan filter mis-handles hidden animal ingredients | Med (mis-categorized/animal item shown) | Med | Route ambiguous→Uncategorized; manual correction learns | Accept (NFR4); best-effort by design |
-| R5 | Meat/milk assumed plant-based but bought for a guest | Low | Low | Manual re-categorize; optional first-seen confirm (future) | Accept; defer confirm prompt |
+| R4 | Vegan filter mis-handles hidden animal ingredients | Med (mis-categorised/animal item shown) | Med | Route ambiguous→Uncategorised; manual correction learns | Accept (NFR4); best-effort by design |
+| R5 | Meat/milk assumed plant-based but bought for a guest | Low | Low | Manual re-categorise; optional first-seen confirm (future) | Accept; defer confirm prompt |
 | R6 | HACS/custom card install friction | Low | Med | Serve built card as a frontend resource; document steps | Accept |
 | R7 | Very large list exceeds attribute size limits | Low | Low | Minimal item objects; exclude from recorder; fallback to a websocket command if needed | Monitor; implement fallback only if hit |
 | R8 | `alexa_devices` internal API changes/breaks (unofficial Amazon API) | Med | Med | We depend only on the public todo contract, not internals | Accept; isolate via public services |
@@ -35,7 +35,7 @@
 - OQ4: Is a first-seen confirmation prompt for new meat/milk items wanted in v1, or deferred?
   (Assumed deferred.)
 - OQ5: **RESOLVED (user, 2026-08-29).** Non-blocking first-setup "Review your categories" banner +
-  prominent `Uncategorized` bucket accepted in lieu of a blocking review gate (Req 1.7). The
+  prominent `Uncategorised` bucket accepted in lieu of a blocking review gate (Req 1.7). The
   requirement is preserved unchanged in `docs/specs/`; the plan documents the reinterpretation.
 - OQ6: `codeowners`/repo URL/`hacs.json` details to finalize before publishing.
 - OQ7: **RESOLVED (user, 2026-08-29).** Complete-on-tap accepted — ticking marks the item complete
@@ -53,7 +53,7 @@
 | 2026-08-29 | Source entity is `todo.david_carson_amazon_gmail_com_shopping_list` (alexa_devices), user-selectable in config flow | It is the real Alexa list; native `todo.shopping_list` is empty/unrelated | spec's `todo.shopping_list` (C1) |
 | 2026-08-29 | Custom integration + card instead of pyscript | Config flow, coordinator, entities, services, diagnostics, tests, migrations | spec design vehicle (C4) |
 | 2026-08-29 | Seed from live list (incl. completed) + defaults + learn over time; drop history mining | No recorder history exists; completed items are retained by alexa_devices | spec Req 1 history bootstrap (C2) |
-| 2026-08-29 | No `Dairy`/`Fish` category; milk→Milk, dairy-style→Chilled, meat→Fake Meat, animal→Uncategorized | Requirements + vegan rules; spec's `Dairy` sample was a typo | spec design sample JSON (C3) |
+| 2026-08-29 | No `Dairy`/`Fish` category; milk→Milk, dairy-style→Chilled, meat→Fake Meat, animal→Uncategorised | Requirements + vegan rules; spec's `Dairy` sample was a typo | spec design sample JSON (C3) |
 | 2026-08-29 | Tick model is **complete-on-tap + reversing undo** (completion sent immediately; grace window governs undo only) | Removes silent-drop of a completion if the card closes (Req 5.4); backend enforces end state via the public todo service. Note: this makes completion **instantly visible** on Alexa rather than after the grace period — a human-facing reinterpretation of Req 4.1, escalated as OQ7 | Original "client-side deferred finalize timer" (finding H-1); reinterprets Req 4.1 "before finalized" (OQ7 / followup02 FO-1) |
 | 2026-08-29 | Expose a derived `sensor` only; keep the Alexa list as single write target | Avoid drift / second source of truth (NFR3) | — |
 | 2026-08-29 | Add `category_definitions` read attribute; bump `attributes_version` 1→2 | Card needs to read per-category keywords for Req 6.1; attribute is simpler than a websocket for this small map | — (finding M-2) |
@@ -68,3 +68,4 @@
 | 2026-08-29 | **M-5 latency accepted** (few seconds on push; up to ~5 min on missed push) and **M-6 spike authorised** (implementer may run one manual write to validate Alexa propagation + uid stability before card work) | User accepted | — |
 | 2026-08-29 | **Req 7 polish (followup03):** v3 is the initial shipped contract (R7-L1); shop-name-in-text is whole-word + warn on dictionary-word shop names (R7-L2); `No Preference` position is a card option, default last (R7-O1); added card test for `shop_definitions` panel (R7-O3) | Address followup03 Low/Observation findings pre-implementation | — |
 | 2026-08-29 | **Pre-build polish (followup04):** store schema v1 includes shop fields + `store.py` injects defaults for missing keys (F4-1); **whole-word matching mandatory for both category and shop resolvers** — no substring (F4-2); `reload_category_map`→`reload_maps` (F4-3); diagnostics add shop counts (F4-4); doc 13 updated for `Shop`/shop resolver (F4-5); shop precedence-asymmetry callout (F4-6); optimistic add may re-pivot once (F4-7) | Address followup04 pre-build findings; F4-2 protects the vegan boundary | Category matching was "whole-word/substring" (F4-2); service rename (F4-3) |
+| 2026-08-29 | **British spelling throughout (implementation, DEV-001):** domain `alexa_shopping_categorizer`→`alexa_shopping_categoriser`; module `categorizer.py`→`categoriser.py`; service `recategorize_item`→`recategorise_item`; attribute `uncategorized_count`→`uncategorised_count`; fallback label `Uncategorized`→`Uncategorised`; doc `07-categorization-engine`→`07-categorisation-engine`. `attributes_version` stays **3** (initial shipped contract, no consumer to break). Historical specs/reviews left unchanged. | Owner is a UK English speaker; pre-release so no back-compat obligation | Original American spelling of the domain/identifiers (see `reviews/go-no-go/implementation-deviations.md` DEV-001) |

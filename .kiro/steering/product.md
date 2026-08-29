@@ -2,11 +2,11 @@
 inclusion: always
 ---
 
-# Product: Categorized Alexa Shopping List
+# Product: Categorised Alexa Shopping List
 
 ## What this project is
 
-A Home Assistant custom integration (domain: `alexa_shopping_categorizer`) that presents
+A Home Assistant custom integration (domain: `alexa_shopping_categoriser`) that presents
 the user's Alexa shopping list as a **category-grouped, reactive, tick-with-undo** view,
 and keeps it in sync with the underlying Alexa list.
 
@@ -31,14 +31,14 @@ and keeps it in sync with the underlying Alexa list.
 
 ## Non-negotiable product rules
 
-- The user is **vegan**. Categorization rules:
+- The user is **vegan**. Categorisation rules:
   - Milk-keyword items -> **`Milk`** category (assumed plant-based).
   - Other dairy-style items (cheese, yogurt, butter, cream) -> **`Chilled`**.
   - Meat-keyword items (sausages, bacon, mince, etc.) -> **`Fake Meat`** (assumed plant-based
     substitute), never excluded.
-  - Egg / fish / genuinely animal-derived items -> **`Uncategorized`** for manual review,
+  - Egg / fish / genuinely animal-derived items -> **`Uncategorised`** for manual review,
     never silently dropped, never auto-assigned to a made-up animal category.
-- Categorization must **learn over time**: manual corrections persist and apply to future
+- Categorisation must **learn over time**: manual corrections persist and apply to future
   identical items.
 - **Per-item shop preference** (Req 7): each item resolves to exactly one shop (default set
   Aldi, Asda, Tesco) or the always-present, non-removable **`No Preference`** default (the default
@@ -53,7 +53,7 @@ and keeps it in sync with the underlying Alexa list.
   its own category sub-sections. The user can **independently collapse/expand each shop and each
   category** (manual, card-local) to focus on the store they are in while still seeing that store's
   aisles.
-- The categorized view is a **derived projection**, never a second source of truth. It must
+- The categorised view is a **derived projection**, never a second source of truth. It must
   always be rebuildable from the Alexa list plus the category map **and the shop map**. Shop
   preference is stored in the integration's own store (keyed by normalized item text); it is
   **never** written onto the Alexa list, which has no field for it.

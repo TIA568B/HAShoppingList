@@ -19,12 +19,12 @@ All files in `docs/specs/` were read in full and treated as the primary source o
 |----|-------------|--------|
 | FR1 | Seed an initial item→category mapping from available data | Req 1 |
 | FR2 | Exclude egg/animal-derived categories; milk→Milk; dairy-style→Chilled; meat→Fake Meat | Req 1.2–1.5, 3, 4 |
-| FR3 | Unmappable items → `Uncategorized` (never guess) | Req 1.6, 2.3 |
+| FR3 | Unmappable items → `Uncategorised` (never guess) | Req 1.6, 2.3 |
 | FR4 | Present generated mapping for user review before going live | Req 1.7 |
 | FR5 | Fall back to a default vegan taxonomy if no data; never block setup | Req 1.8 |
-| FR6 | Categorize new items automatically within a few seconds | Req 2.1, 2.2 |
+| FR6 | Categorise new items automatically within a few seconds | Req 2.1, 2.2 |
 | FR7 | Manual category assignment persists and applies to future identical items (learning) | Req 2.4, 6.2 |
-| FR8 | Categorized view updates live on any source change (incl. Alexa-direct) without refresh | Req 3.1 |
+| FR8 | Categorised view updates live on any source change (incl. Alexa-direct) without refresh | Req 3.1 |
 | FR9 | Optimistic UI on tick-off | Req 3.2, 4.1 |
 | FR10 | Collapse/de-emphasize categories with zero remaining unchecked items | Req 3.3 |
 | FR11 | Per-item undo during an 8–10s grace period, tracked independently per item | Req 4.1–4.5 |
@@ -33,7 +33,7 @@ All files in `docs/specs/` were read in full and treated as the primary source o
 | FR14 | Add item via view → native `todo.add_item` on source | Req 5.2 |
 | FR15 | Failed sync retries and surfaces a visible error; never silently drops | Req 5.4 |
 | FR16 | View/add/edit/remove categories and keywords; apply immediately | Req 6.1, 6.2 |
-| FR17 | Deleting a category reassigns its items to `Uncategorized`, never deletes items | Req 6.3 |
+| FR17 | Deleting a category reassigns its items to `Uncategorised`, never deletes items | Req 6.3 |
 | FR18 | Per-item shop preference; default `No Preference`; single shop per item | Req 7.1, 7.5 |
 | FR19 | Shop resolution: shop-name-in-text > learned assignment > shop keyword rule > No Preference | Req 7.2–7.5 |
 | FR20 | Shops are user-manageable (add/edit/remove incl. keyword rules); learning persists; `No Preference` non-removable | Req 7.1, 7.2, 7.8 |
@@ -44,10 +44,10 @@ All files in `docs/specs/` were read in full and treated as the primary source o
 
 | ID | Requirement | Source |
 |----|-------------|--------|
-| NFR1 | Reactive delay ≤ "a few seconds" for new-item categorization and live display | Req 2.1, 3.1 |
+| NFR1 | Reactive delay ≤ "a few seconds" for new-item categorisation and live display | Req 2.1, 3.1 |
 | NFR2 | Undo grace period target 8–10s | Req 4.1 |
 | NFR3 | No drift: projection always rebuildable from source + map | design §2.3 |
-| NFR4 | Best-effort vegan filtering; ambiguous → Uncategorized (not a guarantee) | design §6 |
+| NFR4 | Best-effort vegan filtering; ambiguous → Uncategorised (not a guarantee) | design §6 |
 | NFR5 | Runs fully local; personal data (list contents) stays on-device | derived (security) |
 
 ### Technical constraints
@@ -74,7 +74,7 @@ All files in `docs/specs/` were read in full and treated as the primary source o
 
 ### Performance requirements
 
-- Categorization over a shopping-list-sized corpus (tens to low hundreds of items) must be
+- Categorisation over a shopping-list-sized corpus (tens to low hundreds of items) must be
   effectively instant; recompute is debounced.
 
 ### Operational requirements
@@ -97,14 +97,14 @@ All files in `docs/specs/` were read in full and treated as the primary source o
 | A1 | Grace period "8–10s": fixed or configurable? | Configurable via options flow, default 9s. |
 | A2 | "Collapse or de-emphasize" empty categories: which? | Collapse by default, user-toggle to de-emphasize; card option. |
 | A3 | Where do users edit categories — YAML, a form, or the card? | Primary: card settings panel calling services. Services are the API; card is one client. |
-| A4 | Add-item flow: does a new item get an immediate category before the source round-trips? | Yes — optimistic categorization in the card, reconciled when the inbound flow returns the real item. |
-| A5 | Should completed (already-ticked) items appear in the categorized view? | Show unchecked by default; provide a card toggle to reveal completed. Completed items still feed learning. |
+| A4 | Add-item flow: does a new item get an immediate category before the source round-trips? | Yes — optimistic categorisation in the card, reconciled when the inbound flow returns the real item. |
+| A5 | Should completed (already-ticked) items appear in the categorised view? | Show unchecked by default; provide a card toggle to reveal completed. Completed items still feed learning. |
 
 ## Missing requirements / gaps (recorded as open questions — see doc 15)
 
 - G1: Multiple Alexa lists exist (`shopping_list` and `to_do_list`). Scope confirmed to
   shopping list only; to-do list explicitly out of scope for v1.
-- G2: No requirement covers what happens to `Uncategorized` learning when the same raw text
+- G2: No requirement covers what happens to `Uncategorised` learning when the same raw text
   later gets a manual category — precedence rule needed (defined in doc 07).
 - G3: No requirement defines behavior for duplicate item names on the source list — handled by
   operating on stable `uid`, defined in doc 08.

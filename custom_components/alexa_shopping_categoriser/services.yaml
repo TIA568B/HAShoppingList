@@ -1,0 +1,151 @@
+recategorise_item:
+  fields:
+    entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: alexa_shopping_categoriser
+    item_text:
+      required: true
+      example: "oat milk"
+      selector:
+        text:
+    category:
+      required: true
+      example: "Milk"
+      selector:
+        text:
+    apply_to_uid:
+      required: false
+      example: "amzn1.item.abc"
+      selector:
+        text:
+
+add_category:
+  fields:
+    entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: alexa_shopping_categoriser
+    name:
+      required: true
+      example: "Snacks"
+      selector:
+        text:
+    keywords:
+      required: false
+      selector:
+        object:
+
+edit_category:
+  fields:
+    entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: alexa_shopping_categoriser
+    name:
+      required: true
+      selector:
+        text:
+    new_name:
+      required: false
+      selector:
+        text:
+    keywords:
+      required: false
+      selector:
+        object:
+
+delete_category:
+  fields:
+    entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: alexa_shopping_categoriser
+    name:
+      required: true
+      selector:
+        text:
+
+assign_shop:
+  fields:
+    entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: alexa_shopping_categoriser
+    item_text:
+      required: true
+      example: "oat milk"
+      selector:
+        text:
+    shop:
+      required: true
+      example: "Aldi"
+      selector:
+        text:
+    apply_to_uid:
+      required: false
+      example: "amzn1.item.abc"
+      selector:
+        text:
+
+add_shop:
+  fields:
+    entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: alexa_shopping_categoriser
+    name:
+      required: true
+      example: "Lidl"
+      selector:
+        text:
+    keywords:
+      required: false
+      selector:
+        object:
+
+edit_shop:
+  fields:
+    entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: alexa_shopping_categoriser
+    name:
+      required: true
+      selector:
+        text:
+    new_name:
+      required: false
+      selector:
+        text:
+    keywords:
+      required: false
+      selector:
+        object:
+
+delete_shop:
+  fields:
+    entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: alexa_shopping_categoriser
+    name:
+      required: true
+      selector:
+        text:
+
+reload_maps:
+  fields:
+    entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: alexa_shopping_categoriser

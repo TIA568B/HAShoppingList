@@ -1,6 +1,6 @@
-# 07 — Categorization Engine
+# 07 — Categorisation Engine
 
-Lives in `categorizer.py` as **pure functions** with no `homeassistant` import, so it is fully
+Lives in `categoriser.py` as **pure functions** with no `homeassistant` import, so it is fully
 unit-testable in isolation (see doc 12 — 100% coverage required here).
 
 ## Pipeline
@@ -12,7 +12,7 @@ flowchart LR
     OV -- yes --> CAT1[assigned category]
     OV -- no --> KW{keyword match?}
     KW -- yes --> CAT2[matched category]
-    KW -- no --> UNC[Uncategorized]
+    KW -- no --> UNC[Uncategorised]
 ```
 
 ### 1. Normalize
@@ -41,16 +41,16 @@ flowchart LR
   a contiguous token sequence). First match wins (category order is significant — put more specific
   categories earlier, e.g. `Fake Meat` before generic `Pantry`).
 - **Whole-word matching is mandatory, not substring** (finding F4-2). Substring matching would
-  mis-categorize across the vegan boundary and beyond: `ham` (Fake Meat) would hit "**gra**ham
+  mis-categorise across the vegan boundary and beyond: `ham` (Fake Meat) would hit "**gra**ham
   crackers"/"c**ham**omile"; `tea` (Drinks) would hit "s**tea**k"; `roll` (Bakery) would hit
-  "**roll**mop" (pickled herring, which must stay animal/Uncategorized). This matches the shop
+  "**roll**mop" (pickled herring, which must stay animal/Uncategorised). This matches the shop
   resolver, which is also whole-word — the two resolvers use the **same** matching rule.
 - `difflib.get_close_matches` fuzzy matching remains an explicitly **deferred** enhancement, behind
   the same pure interface; whole-word exact matching is the v1 behaviour.
 
 ### 4. Fallback
 
-- No match → `Uncategorized`. Never guess (Req 1.6, 2.3).
+- No match → `Uncategorised`. Never guess (Req 1.6, 2.3).
 
 ## Vegan rules (non-negotiable — mirrors product steering)
 
@@ -59,13 +59,13 @@ flowchart LR
 | milk keywords (`milk`, `oat milk`, `soy/soya milk`, `almond milk`, `oat drink`) | **Milk** | plant-based milk |
 | dairy-style (`cheese`, `yogurt`/`yoghurt`, `butter`, `cream`) | **Chilled** | plant-based |
 | meat keywords (`sausages`, `bacon`, `mince`, `chicken pieces`, `burgers`, `ham`) | **Fake Meat** | plant-based substitute |
-| egg / fish / clearly animal-derived (`eggs`, `honey`, `gelatine`, `whey`, `salmon`, `prawns`) | **Uncategorized** | ambiguous/animal → manual review |
-| anything else with no match | **Uncategorized** | — |
+| egg / fish / clearly animal-derived (`eggs`, `honey`, `gelatine`, `whey`, `salmon`, `prawns`) | **Uncategorised** | ambiguous/animal → manual review |
+| anything else with no match | **Uncategorised** | — |
 
 - There is **no `Dairy` and no `Fish` category** (the `Dairy` in the spec's sample JSON is a
   typo — see doc 01, C3).
 - Vegan filtering is **best-effort** on text alone; it cannot catch every hidden animal
-  ingredient (NFR4). Ambiguous items route to `Uncategorized` rather than being mis-assigned.
+  ingredient (NFR4). Ambiguous items route to `Uncategorised` rather than being mis-assigned.
 - The Milk/Chilled split is a fixed rule in v1; changing groupings later is a category-map edit
   (Req 6.2), not a code change.
 
@@ -75,17 +75,17 @@ On first setup:
 1. Load the **default vegan taxonomy** (doc 06 storage schema) — never blocks setup (Req 1.8).
 2. Read the **current source list including completed items** via `todo.get_items`
    (both statuses) — this is the corpus (completed items are retained by `alexa_devices`).
-3. Categorize each corpus item with the default map; anything unmatched sits in
-   `Uncategorized`. There is no *blocking* "review before live" gate, because the map only
+3. Categorise each corpus item with the default map; anything unmatched sits in
+   `Uncategorised`. There is no *blocking* "review before live" gate, because the map only
    affects **display grouping** — it never mutates the Alexa list — so an unreviewed map has a
    cosmetic, fully reversible blast radius. Instead, Req 1.7's intent is met by two
-   non-destructive affordances: (a) the card surfaces the `Uncategorized` bucket prominently, and
+   non-destructive affordances: (a) the card surfaces the `Uncategorised` bucket prominently, and
    (b) on **first setup** the card shows a one-time, dismissible "Review your categories" banner
    linking to the settings panel. This satisfies the *intent* of Req 1.7 (a review opportunity
    before relying on the mapping) without blocking setup (Req 1.8). See doc 15 OQ5 — this
    reinterpretation of a hard SHALL is escalated for human confirmation. (Finding M-1 / F-02.)
 4. Optional (future): a one-shot "seed keywords from current list" helper that suggests adding
-   frequent uncategorized terms as keywords — deferred, listed in doc 15.
+   frequent uncategorised terms as keywords — deferred, listed in doc 15.
 
 > **Seed source — export path considered and dropped for v1.** Req 1.1 offered "a user-supplied
 > export" as an alternative seed source. The plan seeds from the live list (active + completed)
@@ -97,7 +97,7 @@ On first setup:
 
 - Because "bacon"/"milk" could in principle be non-vegan, the assumption is plant-based (user
   is vegan). If ever wrong (guest/other household member), the correction path is
-  `recategorize_item` / the card's move action (Req 2.4/6.2). A first-seen confirmation prompt
+  `recategorise_item` / the card's move action (Req 2.4/6.2). A first-seen confirmation prompt
   is a possible enhancement (doc 15), not v1-required.
 
 ## Shop resolution (Req 7 — pure, independent of category)

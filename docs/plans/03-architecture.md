@@ -2,7 +2,7 @@
 
 ## Recommended approach: custom integration + bundled card
 
-Implement `alexa_shopping_categorizer` as a **config-flow custom integration**, distributed via
+Implement `alexa_shopping_categoriser` as a **config-flow custom integration**, distributed via
 HACS, with a **bundled custom Lovelace card**.
 
 ### Alternatives considered
@@ -34,11 +34,11 @@ flowchart LR
       SRC --> TODOSVC
     end
 
-    subgraph asc[alexa_shopping_categorizer]
+    subgraph asc[alexa_shopping_categoriser]
       INIT[__init__.py<br/>setup/unload/reload]
       CF[config_flow.py]
       COORD[coordinator.py]
-      CAT[categorizer.py<br/>pure]
+      CAT[categoriser.py<br/>pure]
       STORE[store.py<br/>HA Store]
       SEN[sensor.py]
       SVC[services.py]
@@ -75,7 +75,7 @@ See [08-update-and-sync-strategy.md](08-update-and-sync-strategy.md) for full se
 Summary:
 
 - **Inbound (read):** source `state_changed` → coordinator pulls items (`todo.get_items`,
-  both statuses) → categorizer builds projection → sensor attributes updated → card renders.
+  both statuses) → categoriser builds projection → sensor attributes updated → card renders.
 - **Outbound (write):** card action → optimistic local state → (grace period) →
   `todo.update_item`/`todo.add_item` on source → inbound flow reconciles.
 
@@ -84,7 +84,7 @@ Summary:
 - Setup creates the store + coordinator, does a first refresh, registers services, forwards
   the sensor platform, and subscribes to source `state_changed`.
 - The coordinator owns all recomputation; entities and services never compute categories
-  themselves — they call the coordinator/categorizer.
+  themselves — they call the coordinator/categoriser.
 
 ## Authentication & authorisation
 
@@ -100,7 +100,7 @@ Summary:
 
 ## Persistence
 
-- **HA Store** (`.storage/alexa_shopping_categorizer.<entry_id>`): category map + learned
+- **HA Store** (`.storage/alexa_shopping_categoriser.<entry_id>`): category map + learned
   overrides + schema version. Rebuildable UI state (the projection) is **not** persisted — it
   is always derived.
 

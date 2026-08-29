@@ -1,12 +1,12 @@
 # 12 — Testing Strategy
 
 Tooling: `pytest` + `pytest-homeassistant-custom-component`, `ruff`, `mypy --strict`. No
-network; no live Alexa. Coverage gates: categorizer 100%; integration ≥90% (see testing
+network; no live Alexa. Coverage gates: categoriser 100%; integration ≥90% (see testing
 steering).
 
 ## Test types
 
-- **Unit (pure):** `categorizer.py` — normalization, matching, vegan rules, override
+- **Unit (pure):** `categoriser.py` — normalization, matching, vegan rules, override
   precedence, fallback, and **shop resolution** (override→shop, none→No Preference,
   deleted-shop→No Preference, shop independent of category — Req 7).
 - **Config flow / options flow:** step behavior, aborts, validation, single-instance.
@@ -22,24 +22,24 @@ steering).
 
 | Area | Case | Expected | Req |
 |------|------|----------|-----|
-| categorizer | "2x oat milk" | Milk | 1.3, 7 |
-| categorizer | "cheddar cheese" | Chilled | 1.4 |
-| categorizer | "smoky bacon" | Fake Meat | 1.5 |
-| categorizer | "free range eggs" | Uncategorized | 1.2 |
-| categorizer | "honey" | Uncategorized | 1.2 |
-| categorizer | "birthday candles" (no kw) | Uncategorized | 1.6, 2.3 |
-| categorizer | "graham crackers" (whole-word) | NOT Fake Meat (no `ham` substring hit) | F4-2 |
-| categorizer | "steak" (whole-word) | NOT Drinks (no `tea` substring hit) | F4-2 |
-| categorizer | "rollmop" (whole-word) | NOT Bakery; Uncategorized (herring is animal) | F4-2 |
-| categorizer | "oat milk" (multi-word keyword) | Milk (whole-phrase match) | 1.3, F4-2 |
-| categorizer | override "birthday candles"→Household | Household (beats keyword/fallback) | 2.4 |
-| categorizer | override→deleted category | falls through to keyword/Uncategorized | 6.3 |
-| categorizer | "nappies" (Aldi keyword rule) | shop == Aldi (independent of category) | 7.3 |
-| categorizer | "tesco nappies" (shop name in text) | shop == Tesco (name beats Aldi keyword rule) | 7.4 |
-| categorizer | "tesco nappies" with learned override→Aldi | shop == Tesco (name in text beats learned override) | 7.4, precedence |
-| categorizer | learned override "oat milk"→Asda, no name in text | shop == Asda (override beats keyword rule) | 7.2 |
-| categorizer | no name/override/keyword | shop == No Preference | 7.5 |
-| categorizer | override/keyword→deleted shop | shop falls back to No Preference | 7.6 |
+| categoriser | "2x oat milk" | Milk | 1.3, 7 |
+| categoriser | "cheddar cheese" | Chilled | 1.4 |
+| categoriser | "smoky bacon" | Fake Meat | 1.5 |
+| categoriser | "free range eggs" | Uncategorised | 1.2 |
+| categoriser | "honey" | Uncategorised | 1.2 |
+| categoriser | "birthday candles" (no kw) | Uncategorised | 1.6, 2.3 |
+| categoriser | "graham crackers" (whole-word) | NOT Fake Meat (no `ham` substring hit) | F4-2 |
+| categoriser | "steak" (whole-word) | NOT Drinks (no `tea` substring hit) | F4-2 |
+| categoriser | "rollmop" (whole-word) | NOT Bakery; Uncategorised (herring is animal) | F4-2 |
+| categoriser | "oat milk" (multi-word keyword) | Milk (whole-phrase match) | 1.3, F4-2 |
+| categoriser | override "birthday candles"→Household | Household (beats keyword/fallback) | 2.4 |
+| categoriser | override→deleted category | falls through to keyword/Uncategorised | 6.3 |
+| categoriser | "nappies" (Aldi keyword rule) | shop == Aldi (independent of category) | 7.3 |
+| categoriser | "tesco nappies" (shop name in text) | shop == Tesco (name beats Aldi keyword rule) | 7.4 |
+| categoriser | "tesco nappies" with learned override→Aldi | shop == Tesco (name in text beats learned override) | 7.4, precedence |
+| categoriser | learned override "oat milk"→Asda, no name in text | shop == Asda (override beats keyword rule) | 7.2 |
+| categoriser | no name/override/keyword | shop == No Preference | 7.5 |
+| categoriser | override/keyword→deleted shop | shop falls back to No Preference | 7.6 |
 | config flow | alexa_devices todo present | creates entry, unique_id=source | C1 |
 | config flow | no alexa_devices todo | abort `no_alexa_lists` (or manual entry warn) | 1.8 |
 | config flow | same source twice | abort already_configured | — |
@@ -51,13 +51,13 @@ steering).
 | coordinator | source unavailable | sensor unavailable, cached projection kept | 9 |
 | coordinator | get_items raises | UpdateFailed, last_update_success False | 9 |
 | sensor | attributes | match contract v3 exactly (snapshot: shop_groups primary, category_definitions, shop_definitions, per-item shop+category) | 6, 7, M-2 |
-| sensor | shop_groups ordering | shops in stored order, No Preference last; categories within, Uncategorized last | 7.7 |
+| sensor | shop_groups ordering | shops in stored order, No Preference last; categories within, Uncategorised last | 7.7 |
 | sensor | shop_definitions | mirrors stored shops + keyword rules (excl. No Preference) | 7.1 |
 | sensor | category_definitions | mirrors stored map name+keywords, ordered | 6.1, M-2 |
 | coordinator | get_items envelope | reads response[source]["items"]; summary→name, status→completed | REVIEW2-001 |
 | sensor | state | == total_unchecked | 5 |
-| services | recategorize_item | overrides updated + recompute | 2.4 |
-| services | delete_category | category gone, items→Uncategorized, items not deleted | 6.3 |
+| services | recategorise_item | overrides updated + recompute | 2.4 |
+| services | delete_category | category gone, items→Uncategorised, items not deleted | 6.3 |
 | services | add_category duplicate name | HomeAssistantError | 6.2 |
 | services | edit_category rename | overrides pointing at old name migrated to new name | REVIEW2-003 |
 | services | assign_shop | shop_overrides updated + recompute; item.shop changes | 7.2 |
@@ -79,8 +79,8 @@ steering).
 | card (js) | tap, window expires | no further call; undo affordance removed | 4.4 |
 | card (js) | two items in undo window | independent timers/undo | 4.5 |
 | card (js) | category all checked | collapsed/de-emphasized | 3.3 |
-| card (js) | first setup | "Review your categories" banner + prominent Uncategorized surfaced | 1.7, M-1 |
-| card (js) | shop→category→items render | shop-primary tree; No Preference last, Uncategorized last within shop | 7.7 |
+| card (js) | first setup | "Review your categories" banner + prominent Uncategorised surfaced | 1.7, M-1 |
+| card (js) | shop→category→items render | shop-primary tree; No Preference last, Uncategorised last within shop | 7.7 |
 | card (js) | manual collapse one shop | only that shop collapses; others unaffected; its categories still independently expandable | 7.7 |
 | card (js) | manual collapse a category within a shop | only that category collapses; sibling categories + other shops unaffected | 7.7 |
 | card (js) | manual collapse state persists across sensor update | card-local collapse retained after a live projection refresh | 7.7 |

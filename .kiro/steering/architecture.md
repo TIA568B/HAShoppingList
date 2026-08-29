@@ -7,7 +7,7 @@ inclusion: always
 ## Chosen approach
 
 Ship a **custom Home Assistant integration** (config-flow based, HACS-distributable) named
-`alexa_shopping_categorizer`, plus a **bundled custom Lovelace card**. Do **not** implement
+`alexa_shopping_categoriser`, plus a **bundled custom Lovelace card**. Do **not** implement
 this as pyscript / `python_script` / raw YAML automations. The original spec proposed
 pyscript; we override that because a first-class integration gives us config flow, a
 `DataUpdateCoordinator`, proper entities, services, diagnostics, unique IDs, and testability.
@@ -18,12 +18,12 @@ pyscript; we override that because a first-class integration gives us config flo
 alexa_devices (core)            ── owns the Alexa list entity; DO NOT fork or modify it
         │  (state_changed events + todo services)
         ▼
-alexa_shopping_categorizer (this integration)
+alexa_shopping_categoriser (this integration)
   ├── coordinator      → reads items from the source todo entity, applies category + shop maps
   ├── category engine  → pure functions: normalize + match text → category; lookup text → shop
   ├── store            → persists category map + shop map + learned overrides (HA Store helper)
-  ├── sensor entity    → sensor.<name>_categorized: derived JSON projection (category + shop)
-  ├── services         → recategorize_item, add_category, edit_category, delete_category,
+  ├── sensor entity    → sensor.<name>_categorised: derived JSON projection (category + shop)
+  ├── services         → recategorise_item, add_category, edit_category, delete_category,
   │                      assign_shop, add_shop, edit_shop, delete_shop, reload_maps
   └── diagnostics      → redacted config + state dump
         │
@@ -36,17 +36,17 @@ custom Lovelace card (frontend/) → subscribes to the sensor + calls todo/nativ
 - This integration **depends on** the source `todo` entity only through the public HA
   state machine and the public `todo.*` services. It must never import from or reach into
   `homeassistant.components.alexa_devices` internals.
-- Category-matching logic lives in **pure, side-effect-free functions** (a `categorizer`
+- Category-matching logic lives in **pure, side-effect-free functions** (a `categoriser`
   module) so it is unit-testable without Home Assistant.
 - All Home Assistant I/O (entity reads, service calls, storage) lives in the coordinator,
-  entity, and service layers — never inside the pure categorizer.
+  entity, and service layers — never inside the pure categoriser.
 - The frontend card talks to the backend only via the sensor state and documented services;
   it holds no private contract with Python internals beyond the sensor attribute schema.
 
 ## Data flow principles
 
 - **Inbound:** source todo entity changes (Alexa push or poll) → coordinator recomputes the
-  categorized projection → sensor updates → card re-renders. Idempotent.
+  categorised projection → sensor updates → card re-renders. Idempotent.
 - **Outbound:** card action → optimistic UI → after grace period → `todo.update_item` /
   `todo.add_item` on the **source** entity → inbound flow reconciles (no-op if already
   matching).
@@ -57,7 +57,7 @@ custom Lovelace card (frontend/) → subscribes to the sensor + calls todo/nativ
 
 | Concern | Location |
 | --- | --- |
-| Text normalization + keyword/fuzzy match + shop lookup | `categorizer.py` (pure) |
+| Text normalization + keyword/fuzzy match + shop lookup | `categoriser.py` (pure) |
 | Category map + shop map + learned overrides persistence | `store.py` (HA Store) |
 | Reading source items, building projection | `coordinator.py` |
 | Exposed sensor | `sensor.py` |
@@ -79,11 +79,11 @@ custom Lovelace card (frontend/) → subscribes to the sensor + calls todo/nativ
 - Shop preference is a **second orthogonal projection dimension** alongside category. It is a pure
   resolver with a fixed precedence — **shop name in item text > learned override > shop keyword
   rule > No Preference** (shop-name-in-text beats a learned override). `No Preference` is the
-  implicit default, mirroring `Uncategorized` for categories. It lives in `categorizer.py` (pure)
+  implicit default, mirroring `Uncategorised` for categories. It lives in `categoriser.py` (pure)
   and is persisted in `store.py` (a `shops` list where each shop has keyword rules + a
   `shop_overrides` learned map), keyed by config entry.
 - **The projection is grouped shop-primary, then category** (Req 7.7): `shop_groups` is the
-  top-level structure (`No Preference` last), each shop nesting categories (`Uncategorized` last).
+  top-level structure (`No Preference` last), each shop nesting categories (`Uncategorised` last).
 - The shop map is **never** written onto the Alexa list; the projection stays rebuildable from the
   source list + category map + shop map. `No Preference` is not stored as a removable shop, and one
   item resolves to exactly one shop (single shop per item, v1).
