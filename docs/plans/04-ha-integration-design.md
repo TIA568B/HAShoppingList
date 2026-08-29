@@ -1,0 +1,159 @@
+# 04 — Home Assistant Integration Design
+
+Domain: **`alexa_shopping_categorizer`**. Config-entry only (no YAML). Follows current HA core
+integration conventions.
+
+## manifest.json
+
+```jsonc
+{
+  "domain": "alexa_shopping_categorizer",
+  "name": "Alexa Shopping List Categorizer",
+  "version": "0.1.0",
+  "codeowners": ["@davidcarson"],
+  "config_flow": true,
+  "dependencies": ["todo"],
+  "documentation": "https://github.com/<owner>/alexa_shopping_categorizer",
+  "iot_class": "calculated",
+  "integration_type": "service",
+  "issue_tracker": "https://github.com/<owner>/alexa_shopping_categorizer/issues",
+  "requirements": []
+}
+```
+
+- `iot_class: calculated` — the integration derives data from another entity; it does no I/O
+  of its own.
+- `integration_type: service` — it provides a derived service/entity, not a physical device.
+- `dependencies: ["todo"]` — guarantees the `todo` building block (and its services) is loaded.
+- `requirements: []` — stdlib only (see doc 13). Add + pin here only if unavoidable.
+
+## Config flow
+
+Single user step:
+
+1. Enumerate candidate source lists: entities in the `todo` domain whose registry `platform`
+   is `alexa_devices`. Present as a dropdown (friendly name + entity id).
+2. If none found, still allow manual entity-id entry, but warn (abort reason
+   `no_alexa_lists` with a description pointing to the `alexa_devices` setup).
+3. Enforce **single config entry per source entity** (`async_set_unique_id(source_entity_id)`
+   then `_abort_if_unique_id_configured()`).
+4. Validate the chosen entity exists and is a `todo` entity; store `source_entity_id` in
+   `entry.data`.
+
+Default selection heuristic: prefer a `todo` entity whose id contains `shopping` on the
+`alexa_devices` platform.
+
+## Options flow
+
+- `grace_period_seconds` (int, 5–30, default **9**).
+- `show_completed` (bool, default false).
+- `collapse_empty_categories` (bool, default true).
+- `redact_items_in_diagnostics` (bool, default true).
+- Changing options triggers `async_reload_entry` (or a lighter listener that re-reads options
+  without a full reload where safe).
+
+> Category/keyword editing is **not** in the options flow — it is done via services (see
+> below) and the card, because it is high-frequency, structured, and needs to apply
+> immediately (Req 6.2).
+
+## Configuration entries
+
+- `entry.data`: `{ "source_entity_id": "todo.<...>" }` (stable).
+- `entry.options`: the options above (mutable).
+- `entry.unique_id`: the source entity id.
+
+## Setup lifecycle (`async_setup_entry`)
+
+1. Create `CategoryStore(hass, entry)`; `await store.async_load()` (creates defaults if empty).
+2. Create `AlexaShoppingCoordinator(hass, entry, store)`.
+3. `await coordinator.async_config_entry_first_refresh()` — raises `ConfigEntryNotReady` if the
+   source entity is unavailable.
+4. Store runtime data on `entry.runtime_data` (typed).
+5. Subscribe to source `state_changed` via `async_track_state_change_event`; store the
+   unsubscribe callback for unload.
+6. Register services (idempotent; only once across entries) — see doc 06.
+7. `await hass.config_entries.async_forward_entry_setups(entry, [Platform.SENSOR])`.
+8. Register the options update listener.
+
+## Unload lifecycle (`async_unload_entry`)
+
+1. `async_unload_platforms(entry, [Platform.SENSOR])`.
+2. Cancel any pending grace-period finalization timers owned by the backend (if any live
+   server-side; primary timing lives in the card — see doc 08).
+3. Detach the source `state_changed` listener.
+4. Deregister services if this is the last entry.
+5. Return the unload success bool.
+
+## Reload behaviour
+
+- `async_reload_entry` = unload + setup. Used on options change and manual reload.
+- The category store is untouched by reload (persisted independently), so learned data
+  survives.
+
+## DataUpdateCoordinator
+
+- `AlexaShoppingCoordinator(DataUpdateCoordinator[Projection])`.
+- `update_interval = timedelta(minutes=15)` — a **safety-net** poll; the real trigger is the
+  source `state_changed` event, which calls `coordinator.async_request_refresh()` (debounced).
+- `_async_update_data`:
+  1. Call `todo.get_items` on the source entity with
+     `data={"status": ["needs_action", "completed"]}, return_response=True`.
+  2. Normalize into `SourceItem` dataclasses (uid, name, completed).
+  3. Run `categorizer.build_projection(items, category_map, overrides, options)`.
+  4. Return the `Projection`.
+- Debounce source events (e.g. 0.5s) to coalesce bursts.
+- On read failure raise `UpdateFailed`; availability follows `last_update_success`.
+
+## Entity platforms
+
+- One platform: `sensor` (see doc 05). No new `todo` entity is created — the source list stays
+  the single write target.
+
+## Services
+
+Defined in `services.yaml` with translations; validated with voluptuous. See doc 06 for
+schemas. Summary:
+
+| Service | Purpose | Req |
+|---------|---------|-----|
+| `recategorize_item` | Set/learn a category for an item's normalized text; re-run | 2.4, 6.2 |
+| `add_category` | Create a category (optionally with keywords) | 6.1, 6.2 |
+| `edit_category` | Rename a category / edit its keywords | 6.2 |
+| `delete_category` | Delete a category; reassign its items to `Uncategorized` | 6.3 |
+| `reload_category_map` | Force reload of the store + recompute | 6.2 |
+
+Completion/undo/add of *items* use the **native** `todo.update_item` / `todo.add_item`
+directly from the card against the source entity — the integration does not wrap those.
+
+## Events
+
+- No custom bus events required for v1. The sensor state change is the frontend's signal. (A
+  future `alexa_shopping_categorizer_sync_failed` event is possible but doc 09 uses a persistent
+  notification / repair issue instead.)
+
+## WebSocket / HTTP APIs
+
+- None custom. The card uses HA's standard state subscription (`subscribe_entities`) and the
+  standard `call_service` websocket command. No bespoke HTTP views.
+
+## Diagnostics
+
+- `async_get_config_entry_diagnostics`: redacted dump — entry data/options, source entity id,
+  category count, per-category item counts, learned-override count, `last_update_success`,
+  `last_synced`, and (only if `redact_items_in_diagnostics` is false) item text. Uses
+  `async_redact_data`.
+
+## Repairs
+
+- Raise a repair issue (`ir.async_create_issue`) if the source entity is missing at setup or
+  goes unavailable beyond a threshold, guiding the user to check `alexa_devices`.
+
+## Reauthentication
+
+- Not applicable — no credentials owned here. If the source entity disappears, that is a
+  repair issue, not a reauth.
+
+## Configuration migration
+
+- `async_migrate_entry` handles config-entry version bumps; the store carries its own
+  `schema_version` and migrates on load. v1 starts both at version 1.
