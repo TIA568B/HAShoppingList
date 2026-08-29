@@ -34,6 +34,11 @@ All files in `docs/specs/` were read in full and treated as the primary source o
 | FR15 | Failed sync retries and surfaces a visible error; never silently drops | Req 5.4 |
 | FR16 | View/add/edit/remove categories and keywords; apply immediately | Req 6.1, 6.2 |
 | FR17 | Deleting a category reassigns its items to `Uncategorized`, never deletes items | Req 6.3 |
+| FR18 | Per-item shop preference; default `No Preference`; single shop per item | Req 7.1, 7.5 |
+| FR19 | Shop resolution: shop-name-in-text > learned assignment > shop keyword rule > No Preference | Req 7.2–7.5 |
+| FR20 | Shops are user-manageable (add/edit/remove incl. keyword rules); learning persists; `No Preference` non-removable | Req 7.1, 7.2, 7.8 |
+| FR21 | Deleting a shop reassigns its items to `No Preference`, never deletes items | Req 7.6 |
+| FR22 | View grouped shop-primary then category; each item's shop visible | Req 7.7 |
 
 ### Non-functional requirements
 

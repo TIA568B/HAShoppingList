@@ -26,7 +26,9 @@ Applies to backend tests under `tests/**` and to the card's own tests under `fro
 
 - **Categorizer (pure):** normalization, keyword match, milk->Milk, dairy->Chilled,
   meat->Fake Meat, animal-derived/egg/fish->Uncategorized, learned-override precedence,
-  no-match->Uncategorized, empty/odd input.
+  no-match->Uncategorized, empty/odd input. **Shop resolution (Req 7) precedence:** shop-name-in-text
+  (beats learned override) -> learned override -> keyword rule -> No Preference; deleted-shop
+  self-heals to No Preference; shop independent of category.
 - **Config flow:** happy path (select source todo entity), abort on no todo entities, abort
   on already-configured, single-instance-per-source rule.
 - **Options flow:** grace-period tuning (range 8–30s), category-map edits round-trip. Options must
@@ -37,11 +39,14 @@ Applies to backend tests under `tests/**` and to the card's own tests under `fro
   completed), recomputes on source state change, debounces bursts, handles source entity
   unavailable, safety-net poll.
 - **Sensor:** attribute schema matches the documented frontend contract exactly (currently
-  `attributes_version: 2`, including `category_definitions`); availability reflects coordinator +
-  source state.
+  `attributes_version: 3`, including `category_definitions`, `shops`, and per-item `shop`);
+  availability reflects coordinator + source state.
 - **Services:** `recategorize_item` persists a learned override and re-runs; `delete_category`
   reassigns to `Uncategorized` (never deletes items); `edit_category` rename **migrates learned
-  overrides** to the new name; add/edit validate input; invalid input raises.
+  overrides** to the new name; add/edit validate input; invalid input raises. **Shop services
+  (Req 7):** `assign_shop` learns a shop (and `No Preference` clears it); `delete_shop` reassigns
+  to `No Preference` (never deletes items); `edit_shop` rename migrates shop overrides;
+  `add_shop`/`edit_shop` reject duplicates and the reserved `No Preference`.
 - **Sync / error paths:** completion is sent **on tap** via `todo.update_item(status=completed)`
   by `uid` (complete-on-tap); undo is the reversing `status=needs_action` call; failed sync
   retries then surfaces an error and reverts optimistic state (Requirement 5.4). Cover the

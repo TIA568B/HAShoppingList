@@ -19,12 +19,12 @@ alexa_devices (core)            ── owns the Alexa list entity; DO NOT fork o
         │  (state_changed events + todo services)
         ▼
 alexa_shopping_categorizer (this integration)
-  ├── coordinator      → reads items from the source todo entity, applies category map
-  ├── category engine  → pure functions: normalize + match text → category
-  ├── store            → persists category map + learned overrides (HA Store helper)
-  ├── sensor entity    → sensor.<name>_categorized: derived JSON projection
+  ├── coordinator      → reads items from the source todo entity, applies category + shop maps
+  ├── category engine  → pure functions: normalize + match text → category; lookup text → shop
+  ├── store            → persists category map + shop map + learned overrides (HA Store helper)
+  ├── sensor entity    → sensor.<name>_categorized: derived JSON projection (category + shop)
   ├── services         → recategorize_item, add_category, edit_category, delete_category,
-  │                      reload_category_map
+  │                      assign_shop, add_shop, edit_shop, delete_shop, reload_category_map
   └── diagnostics      → redacted config + state dump
         │
         ▼
@@ -57,8 +57,8 @@ custom Lovelace card (frontend/) → subscribes to the sensor + calls todo/nativ
 
 | Concern | Location |
 | --- | --- |
-| Text normalization + keyword/fuzzy match | `categorizer.py` (pure) |
-| Category map + learned overrides persistence | `store.py` (HA Store) |
+| Text normalization + keyword/fuzzy match + shop lookup | `categorizer.py` (pure) |
+| Category map + shop map + learned overrides persistence | `store.py` (HA Store) |
 | Reading source items, building projection | `coordinator.py` |
 | Exposed sensor | `sensor.py` |
 | User-facing operations | `services.py` |
@@ -73,6 +73,20 @@ custom Lovelace card (frontend/) → subscribes to the sensor + calls todo/nativ
   index (see `docs/plans/`).
 - When a file starts covering more than one concern or grows unwieldy, split it and link the
   pieces rather than letting it sprawl.
+
+## Shop preference (Req 7)
+
+- Shop preference is a **second orthogonal projection dimension** alongside category. It is a pure
+  resolver with a fixed precedence — **shop name in item text > learned override > shop keyword
+  rule > No Preference** (shop-name-in-text beats a learned override). `No Preference` is the
+  implicit default, mirroring `Uncategorized` for categories. It lives in `categorizer.py` (pure)
+  and is persisted in `store.py` (a `shops` list where each shop has keyword rules + a
+  `shop_overrides` learned map), keyed by config entry.
+- **The projection is grouped shop-primary, then category** (Req 7.7): `shop_groups` is the
+  top-level structure (`No Preference` last), each shop nesting categories (`Uncategorized` last).
+- The shop map is **never** written onto the Alexa list; the projection stays rebuildable from the
+  source list + category map + shop map. `No Preference` is not stored as a removable shop, and one
+  item resolves to exactly one shop (single shop per item, v1).
 
 ## What to avoid
 

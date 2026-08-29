@@ -95,6 +95,56 @@ On first setup:
   `recategorize_item` / the card's move action (Req 2.4/6.2). A first-seen confirmation prompt
   is a possible enhancement (doc 15), not v1-required.
 
+## Shop resolution (Req 7 — pure, independent of category)
+
+Shop preference is a second pure lookup, resolved for each item **independently** of its category
+(one normalize pass feeds both). It lives in the same pure module (no HA import). Resolution
+applies a strict **precedence** (Req 7 precedence list):
+
+```mermaid
+flowchart TD
+    RAW[raw item name] --> NORM[normalize]
+    NORM --> NAME{item text contains a known shop name?}
+    NAME -- yes --> S1[that named shop]
+    NAME -- no --> OV{shop override match?}
+    OV -- yes, shop exists --> S2[learned shop]
+    OV -- no / shop deleted --> KW{shop keyword rule match?}
+    KW -- yes --> S3[keyword-rule shop]
+    KW -- no --> NP[No Preference]
+```
+
+### Precedence (highest to lowest)
+
+1. **Explicit shop name in item text (Req 7.4).** If the normalized text contains a known shop
+   name as a whole word (e.g. "tesco nappies" → `Tesco`), that shop wins — **even over a learned
+   override** for the same text. Rationale: naming the shop in the item is the most explicit signal
+   the user can give, and it is what they just typed. (Confirmed decision — see doc 15.)
+2. **Learned override (Req 7.2).** If `normalized in shop_overrides` and the target shop still
+   exists, assign it. If the override points at a deleted shop, fall through (self-heal, Req 7.6).
+3. **Shop keyword rule (Req 7.3).** For each shop in order, if any of its keywords is a whole-word
+   match of the normalized text, assign that shop. First match wins (shop order is significant).
+4. **No Preference (Req 7.5).** No signal → `No Preference`. Never guessed.
+
+### Notes
+
+- Shop-name matching (tier 1) tests each configured shop's **name** as a whole word in the item
+  text, so "Tesco" in "tesco nappies" matches but "asda" inside an unrelated word does not.
+- Assigning a shop via the card writes a learned override (tier 2). Assigning `No Preference`
+  **removes** the override, so the item falls back to keyword rules / No Preference.
+- Default shops on first setup: `Aldi`, `Asda`, `Tesco` plus implicit `No Preference`, seeded with
+  starter keyword rules — `Aldi`: `nappies`, `milk`; `Asda`: a broad common-clothing set
+  (`clothes`/`clothing`, tops like `t-shirt`/`shirt`/`jumper`/`hoodie`, `socks`/`underwear`/`pants`,
+  bottoms like `jeans`/`trousers`/`shorts`/`leggings`, `pyjamas`/`jammies`/`pjs`, `dress`/`skirt`,
+  outerwear like `coat`/`jacket`, and `shoes`/`trainers`/`slippers`/`hat`/`gloves`/`scarf` — see
+  doc 06 for the full list); `Tesco`: none. The default assignment for an unmatched item is
+  `No Preference`. Never blocks setup; the user edits shops/keywords freely (Req 7.1).
+- `build_projection(...)` returns each item's `category` **and** `shop`; the two are orthogonal.
+  The projection is then grouped **shop-primary, then category** (Req 7.7) — see doc 06 contract.
+
+> **Milk example (interaction with categories):** "milk" resolves to category **Milk** (vegan rule)
+> and, independently, to shop **Aldi** (shop keyword rule). "oat milk" → category Milk, shop Aldi.
+> "tesco milk" → category Milk, shop **Tesco** (shop name in text beats the Aldi keyword rule).
+
 ## Determinism & performance
 
 - Pure, deterministic, order-stable. Complexity is O(items × keywords); trivial for

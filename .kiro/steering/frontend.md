@@ -16,7 +16,19 @@ contract is canonical in `docs/plans/06-data-model-and-contract.md`.
   (canonical schema in `docs/plans/06`) and documented HA services. It holds no private contract
   with Python internals.
 - Read categories/keywords for the settings panel from the sensor's `category_definitions`
-  attribute (Req 6.1). Do not invent a private read path.
+  attribute (Req 6.1), and shops/keyword-rules from `shop_definitions` (Req 7.1). Do not invent a
+  private read path.
+- **Shop preference (Req 7):** render a **two-level tree — shop → category (aisle) → items** from
+  `shop_groups` (`No Preference` last; `Uncategorized` last within each shop). Each item shows its
+  `category`. Shop assignment via `assign_shop` (`No Preference` clears it); shop management via
+  `add_shop`/`edit_shop`/`delete_shop` (name + keyword rules). Shop is independent of category — do
+  not derive one from the other.
+- **Collapse is manual + independent per level, plus auto-collapse-when-empty.** The user can
+  collapse/expand each shop and each category independently (to focus on one store while still
+  seeing its aisles). Manual collapse state is **card-local** UI state (per shop + per category),
+  remembered across sensor updates, never written back to the sensor. The server-provided
+  `collapsed` flag is only the auto-collapse-when-empty hint (Req 3.3); it does not override manual
+  expand.
 - Honour `attributes_version`: if the sensor's version is higher than the card supports, degrade
   gracefully (render what is known, show a "please update the card" hint) rather than crashing.
 - Sanctioned calls only: `subscribe_entities` (live updates), `call_service` for `todo.add_item`

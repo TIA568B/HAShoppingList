@@ -40,8 +40,23 @@ and keeps it in sync with the underlying Alexa list.
     never silently dropped, never auto-assigned to a made-up animal category.
 - Categorization must **learn over time**: manual corrections persist and apply to future
   identical items.
+- **Per-item shop preference** (Req 7): each item resolves to exactly one shop (default set
+  Aldi, Asda, Tesco) or the always-present, non-removable **`No Preference`** default (the default
+  assignment). Shops are user-manageable (add/edit/remove) and each has **keyword rules**. Shop
+  resolution precedence (highest→lowest): **shop name in item text** ("tesco nappies" → Tesco) >
+  **learned assignment** > **shop keyword rule** (nappies→Aldi, milk→Aldi, clothing→Asda) >
+  **No Preference**. Shop-name-in-text beats a learned override. Shop is **independent of**
+  category (an item has both), **learns over time**, and deleting a shop reassigns its items to
+  `No Preference` (never deletes items).
+- **Primary grouping is by shop, then by category/aisle** (Req 7.7): shop -> category -> items
+  (e.g. Aldi -> Milk -> milk). The category taxonomy and vegan rules are unchanged; each shop has
+  its own category sub-sections. The user can **independently collapse/expand each shop and each
+  category** (manual, card-local) to focus on the store they are in while still seeing that store's
+  aisles.
 - The categorized view is a **derived projection**, never a second source of truth. It must
-  always be rebuildable from the Alexa list plus the category map.
+  always be rebuildable from the Alexa list plus the category map **and the shop map**. Shop
+  preference is stored in the integration's own store (keyed by normalized item text); it is
+  **never** written onto the Alexa list, which has no field for it.
 
 ## Primary user
 

@@ -28,28 +28,23 @@
 ## Open questions (for user/reviewer)
 
 - OQ1: Confirm the Alexa to-do list (`todo.david_carson_amazon_gmail_com_to_do_list`) is out of
-  scope for v1. (Assumed yes.)
+  scope for v1. (Assumed yes; not contradicted.)
 - OQ2: Should completed items be visible in the card by default, or only via a toggle?
   (Assumed: hidden by default, toggle to reveal.)
-- OQ3: Grace-period default is 9s; range narrowed to **8–30s** (8s floor respects the spec's
-  8–10s intent — finding L-7). Confirm the widened ceiling is acceptable.
+- OQ3: **RESOLVED (user, 2026-08-29).** Grace-period default 9s, range 8–30s — accepted.
 - OQ4: Is a first-seen confirmation prompt for new meat/milk items wanted in v1, or deferred?
   (Assumed deferred.)
-- OQ7 **(needs human decision — followup02 FO-1):** the **complete-on-tap** model (finding H-1)
-  is a behavioural reinterpretation of Req 4.1. The spec frames the grace period as happening
-  *before* the completion is finalized, which reads as "don't send until the timer expires."
-  Complete-on-tap sends the completion **immediately** and treats the window as undo-only, so a
-  user watching the Alexa app sees the item complete instantly rather than after ~9s. This is the
-  safer engineering choice (nothing silently lost — Req 5.4) and is recorded in the decision log,
-  but it is a **human-facing** behaviour change alongside OQ5. Confirm the user expects
-  instant-visible completion with an undo window, rather than a delayed send.
-- OQ5 **(needs human decision — finding M-1):** Req 1.7 is a hard SHALL ("review before live").
-  The plan reinterprets it as a **non-blocking** first-setup "Review your categories" banner +
-  prominent `Uncategorized` bucket, justified because the map only affects display grouping and
-  never mutates the Alexa list (cosmetic, reversible blast radius). Confirm this is acceptable, or
-  request a blocking gate (bounded Phase 2/4 rework). The requirement is preserved unchanged in
-  `docs/specs/` meanwhile.
+- OQ5: **RESOLVED (user, 2026-08-29).** Non-blocking first-setup "Review your categories" banner +
+  prominent `Uncategorized` bucket accepted in lieu of a blocking review gate (Req 1.7). The
+  requirement is preserved unchanged in `docs/specs/`; the plan documents the reinterpretation.
 - OQ6: `codeowners`/repo URL/`hacs.json` details to finalize before publishing.
+- OQ7: **RESOLVED (user, 2026-08-29).** Complete-on-tap accepted — ticking marks the item complete
+  on the Alexa list immediately; the grace window is undo-only (instant-visible completion with an
+  undo window), reinterpreting Req 4.1's "before finalized" phrasing.
+- OQ8: **RESOLVED (user, 2026-08-29).** `milk` stays an Aldi shop keyword (all milk auto-assigns to
+  Aldi until manually re-assigned), per "Nappies and Milk should be Aldi".
+- OQ9: **RESOLVED (user, 2026-08-29).** Auto-collapse-when-empty is kept **in addition to** manual
+  collapse (finished shops/aisles de-emphasize; manual expand still works).
 
 ## Decisions log
 
@@ -66,3 +61,8 @@
 | 2026-08-29 | Grace-period range 8–30s (default 9), floor raised from 5s to 8s | Respect the spec's 8–10s lower bound | Plan's earlier 5–30s range (finding L-7) |
 | 2026-08-29 | `edit_category` rename migrates learned overrides to the new name | Prevent silent learning loss on rename | — (finding REVIEW2-003) |
 | 2026-08-29 | Early Phase 2.5 write spike validates R1/R2 before card work | Cheaply de-risk two-way sync before frontend investment | — (finding M-6) |
+| 2026-08-29 | **Per-item shop preference** (Req 7): default `No Preference`; default shops Aldi/Asda/Tesco with starter keyword rules (nappies/milk→Aldi, clothing→Asda); shops learn over time; delete_shop→No Preference | User-requested feature; mirrors category learning + delete-reassign semantics | Adds Req 7 (new scope) |
+| 2026-08-29 | Shop resolution **precedence**: shop-name-in-text > learned override > keyword rule > No Preference (name-in-text **beats** a learned override) | User confirmed "Tesco Nappies"→Tesco even over a learned preference; naming the shop in the item is the most explicit signal | — (user decision) |
+| 2026-08-29 | Shops support **both** keyword rules and learning; **single shop per item**; grouping is **shop-primary then category** (shop → category → items) with **independent manual collapse** per shop and per category | User answers to feature clarifying questions | — (user decisions) |
+| 2026-08-29 | **User sign-offs (OQ3/OQ5/OQ7/OQ8/OQ9):** grace 9s/8–30s; non-blocking review banner; complete-on-tap instant-visible; `milk`→Aldi kept; auto-collapse kept alongside manual | Explicit user confirmation | Closes the human-decision open questions |
+| 2026-08-29 | **M-5 latency accepted** (few seconds on push; up to ~5 min on missed push) and **M-6 spike authorised** (implementer may run one manual write to validate Alexa propagation + uid stability before card work) | User accepted | — |

@@ -155,6 +155,10 @@ schemas. Summary:
 | `add_category` | Create a category (optionally with keywords) | 6.1, 6.2 |
 | `edit_category` | Rename a category / edit its keywords | 6.2 |
 | `delete_category` | Delete a category; reassign its items to `Uncategorized` | 6.3 |
+| `assign_shop` | Set/learn (or clear via `No Preference`) an item's shop; re-run | 7.2, 7.5 |
+| `add_shop` | Create a shop (optionally with keyword rules) | 7.1, 7.3 |
+| `edit_shop` | Rename a shop / edit its keyword rules (migrates learned shop overrides) | 7.1, 7.3 |
+| `delete_shop` | Delete a shop; reassign its items to `No Preference` | 7.6 |
 | `reload_category_map` | Force reload of the store + recompute | 6.2 |
 
 Completion/undo/add of *items* use the **native** `todo.update_item` / `todo.add_item`

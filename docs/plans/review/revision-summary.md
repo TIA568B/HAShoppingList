@@ -186,6 +186,12 @@ Summarised; details in finding-disposition.md.
 
 ## Decisions Requiring Human Approval
 
+> **Update (2026-08-29): all resolved by the user.** OQ5 (non-blocking review), OQ7
+> (complete-on-tap instant-visible), OQ3 (grace 9s/8–30s), M-5 (latency accepted), and M-6 (spike
+> authorised) were all confirmed. Plus shop-feature sign-offs OQ8 (`milk`→Aldi) and OQ9
+> (auto-collapse kept). See `docs/plans/15` decisions log / OQ list. The items below are retained
+> for historical context.
+
 1. **OQ5** — accept the live-triage + first-setup review affordance in lieu of a blocking
    "review before live" gate (Req 1.7)? (Escalated; requirement preserved meanwhile.)
 2. **OQ7** — accept **complete-on-tap** making completion instantly visible on Alexa (rather than

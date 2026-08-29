@@ -120,3 +120,52 @@ mappings over time, so the system stays accurate as my shopping habits change.
    change and apply it to future categorization immediately.
 3. WHEN a category is deleted THE SYSTEM SHALL reassign its items to "Uncategorized" rather than
    deleting the items themselves.
+
+## Requirement 7: Per-Item Shop Preference
+
+**User Story:** As a user, I want to map specific items to a preferred shop (e.g. Aldi, Asda,
+Tesco) or leave them with "No Preference", so that when I shop I can see which items are meant for
+which shop, and I can add my own shops over time.
+
+### Acceptance Criteria
+1. WHEN the user opens shop settings THE SYSTEM SHALL display all shops and their shop keyword
+   rules, and allow adding, editing, and removing shops, with an always-present, non-removable
+   "No Preference" default.
+2. WHEN the user assigns an item to a shop THE SYSTEM SHALL persist that mapping so future
+   identical items are assigned the same shop automatically (learning), mirroring category
+   learning (Req 2.4).
+3. WHEN an item matches a shop keyword rule (e.g. "nappies" -> Aldi, "milk" -> Aldi, clothing
+   terms -> Asda) and has no more-specific signal THE SYSTEM SHALL assign it to that shop.
+4. WHEN an item's text explicitly names a known shop (e.g. "Tesco nappies") THE SYSTEM SHALL
+   assign it to that named shop, taking precedence over keyword rules and learned assignments.
+5. WHEN an item matches no shop signal (no explicit shop name, no learned assignment, no keyword
+   rule) THE SYSTEM SHALL treat it as "No Preference" rather than guessing a shop.
+6. WHEN a shop is deleted THE SYSTEM SHALL reassign its items to "No Preference" rather than
+   deleting the items themselves (mirrors Req 6.3).
+7. WHEN the categorized view is displayed THE SYSTEM SHALL group items primarily by shop and
+   secondarily by category/aisle (shop -> category -> items), making each item's shop visible, AND
+   SHALL allow the user to independently collapse/expand each shop and each category within it, so
+   the user can focus on a single shop while still seeing that shop's aisle/category breakdown.
+8. WHEN a shop name is added or edited THE SYSTEM SHALL validate it (non-empty, unique
+   case-insensitively, length-limited, control-char free, not the reserved "No Preference") and
+   SHALL apply the change immediately.
+
+### Shop resolution precedence (highest to lowest)
+1. **Explicit shop name in the item text** (item text contains a known shop name) -> that shop.
+2. **Learned assignment** (the user previously assigned this exact normalized text a shop) -> that shop.
+3. **Shop keyword rule** (item matches a shop's keyword list) -> that shop.
+4. **No Preference** (default; never guessed).
+
+### Notes / assumptions
+- Shop preference is **independent of** category: an item has both a category (Req 1–2, 6) and a
+  shop (this requirement). Neither derives from the other.
+- Shop assignment, like categorization, is a **derived projection** persisted in the integration's
+  own store (keyed by normalized item text); it is never written onto the Alexa list, which has no
+  field for it. The projection remains rebuildable from the Alexa list plus the stored maps.
+- **A single shop per item** (v1). There is no multi-shop / "available at either" concept.
+- Default shops on first setup: **Aldi, Asda, Tesco** (plus the implicit, non-removable "No
+  Preference"), seeded with starter keyword rules (nappies -> Aldi, milk -> Aldi, common clothing
+  terms -> Asda). The default *assignment* for an unmatched item is "No Preference". The user can
+  add/remove shops and edit keyword rules freely per 7.1.
+- The primary grouping in the view is **by shop, then by category** (Req 7.7). The category rules
+  (Req 1–6) are unchanged; they determine the secondary grouping within each shop.

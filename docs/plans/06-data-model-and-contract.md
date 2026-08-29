@@ -21,6 +21,7 @@ class CategorizedItem:
     name: str
     checked: bool
     category: str
+    shop: str            # resolved shop preference; "No Preference" when unset (Req 7)
 
 @dataclass(slots=True)
 class Category:
@@ -28,10 +29,17 @@ class Category:
     keywords: list[str] = field(default_factory=list)
 
 @dataclass(slots=True)
+class Shop:
+    name: str
+    keywords: list[str] = field(default_factory=list)   # shop keyword rules (Req 7.3)
+
+@dataclass(slots=True)
 class CategoryMap:
     schema_version: int
     categories: list[Category]                 # ordered; display order
     overrides: dict[str, str]                   # normalized_text -> category name (learned)
+    shops: list[Shop]                           # ordered; user-managed shops (excl. "No Preference"), each with keyword rules
+    shop_overrides: dict[str, str]              # normalized_text -> shop name (learned, Req 7.2)
 
 # A Projection is what the coordinator returns and the sensor exposes:
 Projection = dict  # see JSON contract below (built from CategorizedItems)
@@ -61,13 +69,37 @@ Key: `alexa_shopping_categorizer.<entry_id>` (one store per config entry).
   ],
   "overrides": {
     "birthday candles": "Household"
+  },
+  "shops": [
+    { "name": "Aldi", "keywords": ["nappies", "milk"] },
+    { "name": "Asda", "keywords": [
+        "clothes", "clothing", "t-shirt", "tshirt", "shirt", "jumper", "hoodie",
+        "socks", "underwear", "pants", "knickers", "boxers", "vest",
+        "jeans", "trousers", "shorts", "leggings", "joggers",
+        "pyjamas", "jammies", "pjs", "dress", "skirt", "coat", "jacket",
+        "shoes", "trainers", "slippers", "hat", "gloves", "scarf"
+    ] },
+    { "name": "Tesco", "keywords": [] }
+  ],
+  "shop_overrides": {
+    "oat milk": "Aldi",
+    "washing up liquid": "Asda"
   }
 }
 ```
 
 - `Uncategorized` is implicit — not stored as a category; it is the fallback bucket. It is
   always rendered last.
-- Storage holds **no item state** (checked/unchecked) and no copy of the list — only the map and
+- `No Preference` is implicit — not stored in `shops`; it is the shop fallback (Req 7.5) and is
+  never removable (Req 7.1). `shops` holds only user-managed shops, each with its own keyword
+  rules (Req 7.3), in display order.
+- `shop_overrides` is the **shop learning** store: normalized item text → shop name (Req 7.2),
+  mirroring `overrides` for categories. An override pointing at a deleted shop self-heals to
+  `No Preference`.
+- **Shop names are also matched inside item text** (Req 7.4): if an item's normalized text
+  contains a known shop name (e.g. "tesco nappies" contains "tesco"), that shop wins over the
+  learned override and keyword rules. See the precedence in doc 07.
+- Storage holds **no item state** (checked/unchecked) and no copy of the list — only the maps and
   learned overrides. This keeps the projection rebuildable and drift-free (NFR3).
 
 ### Migration
@@ -75,13 +107,15 @@ Key: `alexa_shopping_categorizer.<entry_id>` (one store per config entry).
 - On load, if `schema_version` < current, run ordered migrators, then persist. v1 defines
   version 1.
 
-## Sensor attribute contract (v1)
+## Sensor attribute contract (attributes_version 3)
 
-The sensor's `extra_state_attributes`:
+The sensor's `extra_state_attributes` (canonical). `attributes_version` history: v1 initial,
+v2 added `category_definitions` (M-2), v3 restructured to shop-primary `shop_groups` + added
+`shop_definitions` and per-item `shop`/`category` (Req 7).
 
 ```jsonc
 {
-  "attributes_version": 2,
+  "attributes_version": 3,
   "source_entity_id": "todo.david_carson_amazon_gmail_com_shopping_list",
   "last_synced": "2026-08-29T16:12:11+01:00",
   "total_unchecked": 12,
@@ -98,20 +132,41 @@ The sensor's `extra_state_attributes`:
     { "name": "Produce", "keywords": ["apple", "banana", "carrot", "lettuce", "onion"] },
     { "name": "Milk",    "keywords": ["milk", "oat milk", "soy milk", "almond milk"] }
   ],
-  "categories": [
+  // Read path for the card's shop-settings panel (Req 7.1 "view shops + their keyword rules").
+  // "No Preference" is implicit and always available; it is not listed here.
+  "shop_definitions": [
+    { "name": "Aldi",  "keywords": ["nappies", "milk"] },
+    { "name": "Asda",  "keywords": ["clothes", "t-shirt", "socks", "jeans", "shorts", "pyjamas", "jammies", "..."] },
+    { "name": "Tesco", "keywords": [] }
+  ],
+  // PRIMARY grouping is by shop, then by category (Req 7.7). Shops are ordered by the stored
+  // shop order; "No Preference" always last. Within each shop, categories are ordered by the
+  // stored category order; "Uncategorized" always last.
+  "shop_groups": [
     {
-      "name": "Produce",
+      "name": "Aldi",
       "collapsed": false,
-      "items": [
-        { "uid": "amzn1.item.abc", "name": "bananas", "checked": false },
-        { "uid": "amzn1.item.def", "name": "carrots", "checked": false }
+      "categories": [
+        {
+          "name": "Milk",
+          "collapsed": false,
+          "items": [
+            { "uid": "amzn1.item.abc", "name": "oat milk", "checked": false, "shop": "Aldi", "category": "Milk" }
+          ]
+        }
       ]
     },
     {
-      "name": "Uncategorized",
+      "name": "No Preference",
       "collapsed": false,
-      "items": [
-        { "uid": "amzn1.item.ghi", "name": "birthday candles", "checked": false }
+      "categories": [
+        {
+          "name": "Produce",
+          "collapsed": false,
+          "items": [
+            { "uid": "amzn1.item.def", "name": "carrots", "checked": false, "shop": "No Preference", "category": "Produce" }
+          ]
+        }
       ]
     }
   ]
@@ -119,17 +174,31 @@ The sensor's `extra_state_attributes`:
 ```
 
 Rules:
-- `categories` is ordered by the stored category order; `Uncategorized` always last.
-- `category_definitions` mirrors the stored map (name + keyword list) in the same order,
-  giving the card a read source for the settings panel without a mutating call (Req 6.1). It
+- `shop_groups` is the **primary** structure: ordered by stored shop order, `No Preference`
+  always last (Req 7.7). Within each shop, `categories` is ordered by stored category order,
+  `Uncategorized` always last. An item appears in exactly one shop group and one category within
+  it (single shop per item, single category).
+- `category_definitions` mirrors the stored category map (name + keyword list) in order, giving
+  the card a read source for the category-settings panel without a mutating call (Req 6.1). It
   omits `Uncategorized` (no keywords). Keep it small; for a very large map, fall back to the
   websocket read command instead (see doc 15 R7 / M-4).
-- Each category includes `collapsed` computed from the collapse option + whether it has zero
-  unchecked items.
+- `shop_definitions` mirrors the stored shop map (name + keyword rules) in order for the
+  shop-settings panel (Req 7.1). `No Preference` is implicit, always available, never listed.
+- Each item carries both a resolved `shop` (Req 7, default `No Preference`) and its `category`,
+  so the card can re-pivot (e.g. filter by shop, or show a flat category view) without recomputing.
+- Both `shop_groups` and each nested category include `collapsed`, the **server-computed
+  auto-collapse suggestion** (from the `collapse_empty_categories` option + whether the group has
+  zero unchecked items, Req 3.3). It is a hint, not the source of truth for the UI: the card also
+  keeps **card-local manual collapse state** per shop and per category so the user can focus on the
+  store they are in while still expanding aisles within it (Req 7.7). Manual state is never written
+  back to the sensor. See doc 11.
 - When `show_completed` is false, `items` contains only unchecked items but `collapsed`/counts
   still reflect that the category is "done".
 - `attributes_version` gates the card; bump it on any breaking change and update this doc. It was
-  bumped **1 → 2** when `category_definitions` was added (additive; finding M-2).
+  bumped **1 → 2** when `category_definitions` was added (additive; finding M-2), and **2 → 3**
+  for Req 7, which **restructured** the projection to shop-primary (`shop_groups` replaces the
+  top-level `categories`) and added `shop_definitions` and per-item `shop`/`category`. Because the
+  top-level shape changed, v3 is a breaking change for the card (the card must read `shop_groups`).
 - **`attributes_version` (this frontend contract) and the store `schema_version` (persistence,
   above) are independent counters** — they version different things and need not move together
   (followup02 FO-2).
@@ -181,6 +250,31 @@ delete_category:
     entry_id: { required: false }
     name: { required: true }
 
+assign_shop:
+  fields:
+    entry_id: { required: false, selector: { config_entry: { integration: alexa_shopping_categorizer } } }
+    item_text: { required: true, example: "oat milk", selector: { text: {} } }
+    shop: { required: true, example: "Aldi", selector: { text: {} } }   # "No Preference" clears the preference
+    apply_to_uid: { required: false, example: "amzn1.item.abc", selector: { text: {} } }
+
+add_shop:
+  fields:
+    entry_id: { required: false }
+    name: { required: true, example: "Lidl", selector: { text: {} } }
+    keywords: { required: false, selector: { object: {} } }   # list[str] shop keyword rules
+
+edit_shop:
+  fields:
+    entry_id: { required: false }
+    name: { required: true }
+    new_name: { required: false }
+    keywords: { required: false, selector: { object: {} } }   # replaces the shop's keyword rules
+
+delete_shop:
+  fields:
+    entry_id: { required: false }
+    name: { required: true }
+
 reload_category_map:
   fields:
     entry_id: { required: false }
@@ -198,4 +292,14 @@ Behavioral contract:
 - `delete_category` removes the category and its keywords; any item currently matching it falls
   through to `Uncategorized` on the next recompute (items are never deleted — Req 6.3). Overrides
   pointing at the deleted category self-heal (fall through to keyword/Uncategorized — see doc 07).
+- `assign_shop` stores `shop_overrides[normalize(item_text)] = shop` (Req 7.2 learning). Assigning
+  `No Preference` **removes** the override (clears the preference) rather than storing it. If
+  `apply_to_uid` is given it also re-runs immediately so that item's shop updates now.
+- `add_shop`/`edit_shop` validate that `name` is non-empty, unique (case-insensitive), control-char
+  free, length-limited, and not the reserved `No Preference` (Req 7.8); `keywords` sets/replaces the
+  shop's keyword rules (Req 7.3). `edit_shop` rename migrates `shop_overrides` pointing at the old
+  name to the new name (mirrors `edit_category`, REVIEW2-003).
+- `delete_shop` removes the shop (and its keyword rules); any item preferring it — via learned
+  override or keyword rule — falls through to `No Preference` on the next recompute; items are
+  never deleted (Req 7.6). `No Preference` cannot be deleted.
 - All services persist the store, then request a coordinator recompute.

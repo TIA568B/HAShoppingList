@@ -72,10 +72,19 @@ Follow current (2025-2026) Home Assistant core integration conventions.
 
 - Define services in `services.yaml` with full field metadata and translations.
 - Services: `recategorize_item`, `add_category`, `edit_category`, `delete_category`,
-  `reload_category_map`. Validate all input with voluptuous schemas.
+  `assign_shop`, `add_shop`, `edit_shop`, `delete_shop`, `reload_category_map`. Validate all input
+  with voluptuous schemas.
 - `delete_category` must reassign affected items to `Uncategorized`, never delete items.
-- `edit_category` rename must migrate learned overrides pointing at the old name to the new name,
-  so a rename does not silently discard learning (finding REVIEW2-003).
+  `delete_shop` must reassign affected items to `No Preference`, never delete items (Req 7.6).
+- `edit_category`/`edit_shop` rename must migrate learned overrides pointing at the old name to the
+  new name, so a rename does not silently discard learning (finding REVIEW2-003). `add_shop`/
+  `edit_shop` also set/replace the shop's keyword rules (Req 7.3) and reject the reserved
+  `No Preference` (Req 7.8).
+- `assign_shop` persists a learned shop override (normalized item text → shop) mirroring
+  `recategorize_item`; `No Preference` clears it. The resolution **precedence** (shop name in item
+  text > learned override > keyword rule > No Preference — shop-name-in-text beats a learned
+  override) lives in the pure categorizer, not in services. The projection is grouped
+  **shop-primary, then category** (Req 7.7).
 - These are **config-entry-scoped** services operating on the shared category map, targeted by an
   optional `entry_id` (`config_entry` selector) — **not** entity services. Do not register them
   via `async_register_entity_service`; the category map is not an entity (finding S-04).

@@ -12,19 +12,22 @@ replaced by live-list seeding).
 - **Tests:** smoke test that the component imports and sets up/unloads.
 
 ## Phase 1 — Pure categorizer + models + store
-- **Objective:** the deterministic categorization core + persistence.
-- **Files:** `models.py`, `categorizer.py`, `store.py`, default taxonomy.
+- **Objective:** the deterministic categorization + shop-resolution core + persistence.
+- **Files:** `models.py`, `categorizer.py`, `store.py`, default taxonomy + default shops.
 - **Dependencies:** Phase 0.
-- **Acceptance:** categorizer passes the full vegan matrix (doc 12) at 100% coverage; store
-  loads defaults, persists, migrates.
-- **Tests:** `test_categorizer.py`, store/migration tests.
+- **Acceptance:** categorizer passes the full vegan matrix **and the shop-resolution matrix**
+  (doc 12) at 100% coverage — including the precedence (shop-name-in-text > learned override >
+  keyword rule > No Preference) and deleted-shop self-heal; store loads default categories +
+  default shops (Aldi/Asda/Tesco with starter keyword rules), persists, migrates.
+- **Tests:** `test_categorizer.py` (categories + shops), store/migration tests.
 
 ## Phase 2 — Config flow + coordinator + sensor
 - **Objective:** select source entity, read items, expose the projection.
 - **Files:** `config_flow.py`, `coordinator.py`, `sensor.py`, `strings.json`, translations.
 - **Dependencies:** Phase 1.
 - **Acceptance:** selecting the `alexa_devices` todo list creates an entry; sensor shows the
-  categorized projection matching the contract (v2, incl. `category_definitions`); recomputes on
+  categorized projection matching the contract (v3: shop-primary `shop_groups`,
+  `category_definitions`, `shop_definitions`, per-item shop+category); recomputes on
   source `state_changed` (latency: a few seconds on push, up to ~5 min on a missed push via the
   upstream poll — finding M-5); handles unavailable source; reconfigure flow changes the source.
 - **Tests:** `test_config_flow.py`, `test_coordinator.py`, `test_sensor.py`.
@@ -39,22 +42,25 @@ replaced by live-list seeding).
 - **Note:** this is a **write** action for the implementer — explicitly **out of scope** for the
   read-only planning/review tasks; must not be run via a read-only MCP.
 
-## Phase 3 — Services (maintenance + learning)
-- **Objective:** category CRUD + learned re-categorization.
+## Phase 3 — Services (maintenance + learning) — categories **and shops**
+- **Objective:** category + shop CRUD + learned re-categorization/assignment.
 - **Files:** `services.py`, `services.yaml`, options flow additions.
 - **Dependencies:** Phase 2.
-- **Acceptance:** add/edit/delete category and `recategorize_item` persist and re-run;
-  delete reassigns items to `Uncategorized` (never deletes); `edit_category` rename migrates
-  learned overrides to the new name (finding REVIEW2-003); duplicate/invalid rejected.
-- **Tests:** `test_services.py`, `test_options_flow.py`.
+- **Acceptance:** category services as before (add/edit/delete + `recategorize_item`, delete→
+  Uncategorized, rename migrates overrides); **shop services** `assign_shop` (learns; `No
+  Preference` clears), `add_shop`/`edit_shop` (name + keyword rules; reject reserved
+  `No Preference`; rename migrates shop overrides), `delete_shop` (reassign items→`No Preference`,
+  never delete); duplicate/invalid rejected.
+- **Tests:** `test_services.py` (categories + shops), `test_options_flow.py`.
 
 ## Phase 4 — Frontend card: render + live + add
-- **Objective:** live categorized view with add-item.
+- **Objective:** live shop-primary/category-secondary view with add-item.
 - **Files:** `frontend/**`.
-- **Dependencies:** Phase 2 (contract) + 3 (category edit).
-- **Acceptance:** card subscribes and re-renders live; add-item calls `todo.add_item`;
-  collapse-when-empty works.
-- **Tests:** card unit tests (render, collapse, add).
+- **Dependencies:** Phase 2 (contract) + 3 (category + shop edit).
+- **Acceptance:** card subscribes and re-renders live; renders **shop-primary then category**
+  from `shop_groups` (`No Preference` last); add-item calls `todo.add_item`; collapse-when-empty
+  works at shop and category level.
+- **Tests:** card unit tests (shop-primary render, collapse, add).
 
 ## Phase 5 — Frontend card: tick + undo + errors
 - **Objective:** complete-on-tap with reversing undo, per-item undo window, error surfacing.
@@ -66,6 +72,8 @@ replaced by live-list seeding).
   inbound source change to a tracked uid cancels the local undo affordance (source wins, M-7).
 - **Tests:** card state-machine unit tests incl. "card gone during undo window" and
   "inbound delete during undo window".
+- **Also in this phase:** per-item "set shop" action calling `assign_shop`, and the shop-settings
+  panel (`add_shop`/`edit_shop`/`delete_shop`) reading `shop_definitions`. (Req 7.1/7.2)
 
 ## Phase 6 — Diagnostics, repairs, polish, docs
 - **Objective:** production-readiness.

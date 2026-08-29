@@ -7,13 +7,34 @@ tick/undo/add/edit interactions.
 
 - Subscribe to the sensor entity (standard `subscribe_entities` websocket) for live updates
   (Req 3.1). No custom websocket API needed.
-- Render categories in order, `Uncategorized` last. Collapse/de-emphasize categories with zero
-  unchecked items (Req 3.3), honoring the `collapse_empty_categories` option.
+- Render the shop → category (aisle) → items tree in order (`No Preference` shop last;
+  `Uncategorized` category last within each shop). Collapse/de-emphasize groups with zero unchecked
+  items (Req 3.3), honoring the `collapse_empty_categories` option, in addition to manual collapse
+  (see the shop-preference bullet below).
 - Optimistic tick-off + per-item undo grace period (Req 3.2, 4.1–4.5) — timing is client-side.
 - Add-item input → `todo.add_item` on the source entity (Req 5.2).
 - Category settings panel → reads the `category_definitions` sensor attribute to display
   categories + their keywords (Req 6.1, finding M-2), and writes via integration services
   (`add/edit/delete_category`, `recategorize_item`).
+- **Shop preference (Req 7):** the card renders the projection as a **two-level nested tree**:
+  **shop → category (aisle) → items** (from `shop_groups`, `No Preference` last, `Uncategorized`
+  last within each shop). This is the primary shopping view; e.g. `Aldi → Milk → oat milk`. Each
+  shop has its own set of category sub-sections (the same category name can appear under multiple
+  shops). Each item still shows its `category`; a per-item "set shop" action calls `assign_shop`.
+  A shop settings panel reads `shop_definitions` and writes via `add_shop`/`edit_shop`/
+  `delete_shop` (name + keyword rules).
+- **Collapse behaviour (Req 7.7) — manual + independent per level.** Shops and their nested
+  categories are **independently collapsible**:
+  - **Manual collapse** lets the user focus on one store: collapse every shop except the one they
+    are in, and that shop still shows its aisle/category sub-sections (each itself collapsible).
+    Collapsing/expanding one shop does not affect others; collapsing a category only affects that
+    category within its shop.
+  - Manual collapse/expand state is **card-local UI state** (per shop and per category), remembered
+    across sensor updates and re-pivots — it is never written to the backend or the sensor.
+  - **Auto-collapse** (the `collapse_empty_categories` option, Req 3.3) still applies on top:
+    a shop or category with zero unchecked items is de-emphasized/auto-collapsed. Manual state and
+    auto-collapse compose (a user can still manually expand an auto-collapsed group to review it).
+  - Optionally provide a "focus this shop" affordance that collapses all other shops in one tap.
 - **First-setup review affordance (Req 1.7 intent, finding M-1):** on first setup the card shows
   a one-time, dismissible "Review your categories" banner linking to the settings panel, plus a
   prominently-surfaced `Uncategorized` bucket, giving the user a non-blocking review opportunity
@@ -61,7 +82,9 @@ stateDiagram-v2
 | Undo (within window or after) | `todo.update_item` (source, uid, status=needs_action) |
 | Add item | `todo.add_item` (source, item=text) |
 | Move item's category | `alexa_shopping_categorizer.recategorize_item` (item_text, category, apply_to_uid) |
+| Set item's shop | `alexa_shopping_categorizer.assign_shop` (item_text, shop, apply_to_uid); `No Preference` clears it |
 | Add/edit/delete category | corresponding integration service |
+| Add/edit/delete shop | `add_shop` / `edit_shop` / `delete_shop` |
 | Manual refresh | `homeassistant.update_entity` (sensor) |
 
 ## Security in the card

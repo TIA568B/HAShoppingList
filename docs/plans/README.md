@@ -35,7 +35,7 @@ reality differs (reality wins; overrides are documented, specs are left untouche
 ## One-line summary
 
 A custom Home Assistant integration (`alexa_shopping_categorizer`) that derives a live,
-category-grouped, tick-with-undo projection of the Alexa shopping list
-(`todo.david_carson_amazon_gmail_com_shopping_list`, platform `alexa_devices`), learns
-categories over time, and syncs changes back through the native `todo.*` services — paired
-with a custom Lovelace card.
+**shop-then-category**-grouped, tick-with-undo projection of the Alexa shopping list
+(`todo.david_carson_amazon_gmail_com_shopping_list`, platform `alexa_devices`), learns categories
+**and per-item shop preferences** (Aldi/Asda/Tesco/… or No Preference) over time, and syncs changes
+back through the native `todo.*` services — paired with a custom Lovelace card.
