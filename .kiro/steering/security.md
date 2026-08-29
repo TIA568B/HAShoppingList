@@ -20,7 +20,10 @@ inclusion: always
 - Diagnostics output must use `homeassistant.components.diagnostics.async_redact_data` for
   any field that could carry secrets. Provide an option to redact item text in diagnostics.
 
-## Logging restrictions
+## Logging restrictions (canonical)
+
+This is the **canonical** logging-restriction rule for the project; `python.md` and
+`home-assistant.md` reference it rather than restating it (finding L-9 / S-11).
 
 - Never log: credentials, tokens, Amazon account identifiers, or the full list contents at
   `info`/`warning`/`error`.

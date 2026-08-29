@@ -42,6 +42,7 @@ the config flow.
 #### Attributes (the frontend contract — canonical definition in doc 06)
 
 - `categories`: ordered list of category objects, each `{ name, items: [{uid, name, checked}], collapsed }`.
+- `category_definitions`: ordered list of `{ name, keywords }` for the card settings panel (Req 6.1).
 - `uncategorized_count`: int.
 - `total_unchecked`: int (mirrors state).
 - `source_entity_id`: str.

@@ -24,6 +24,11 @@ fileMatchPattern: '**/*.py'
 ## Async patterns
 
 - Public integration functions are `async`. Never call blocking I/O directly in the loop.
+- **Exception — the categorizer is intentionally synchronous and pure.** `categorizer.py` has no
+  `homeassistant` import and no I/O, so its functions are plain `def`, unit-testable standalone.
+  Do not make them `async`. If categorization ever becomes CPU-heavy over a large list, the
+  *coordinator* offloads it with `hass.async_add_executor_job` — the categorizer itself stays sync
+  (finding L-4 / S-06).
 - Offload CPU-bound or blocking work with `hass.async_add_executor_job`.
 - Guard shared mutable state (grace-period timers, in-flight sync) with `asyncio.Lock`
   where concurrent access is possible.
@@ -61,8 +66,9 @@ fileMatchPattern: '**/*.py'
 - Module-level logger: `_LOGGER = logging.getLogger(__name__)`.
 - `debug` for per-item categorization decisions and sync detail; `info` sparingly; `warning`
   for recoverable sync failures; `error` for exhausted retries.
-- Never log credentials, tokens, or full personal shopping contents at `info` or above. Item
-  text may be logged at `debug` only.
+- For **what may be logged at which level** (item text at `debug` only; never credentials/full
+  contents at `info`+), follow the canonical rule in `security.md` — do not restate it here
+  (finding L-9 / S-11).
 
 ## Documentation
 

@@ -24,16 +24,28 @@ replaced by live-list seeding).
 - **Files:** `config_flow.py`, `coordinator.py`, `sensor.py`, `strings.json`, translations.
 - **Dependencies:** Phase 1.
 - **Acceptance:** selecting the `alexa_devices` todo list creates an entry; sensor shows the
-  categorized projection matching the contract; recomputes on source `state_changed`; handles
-  unavailable source.
+  categorized projection matching the contract (v2, incl. `category_definitions`); recomputes on
+  source `state_changed` (latency: a few seconds on push, up to ~5 min on a missed push via the
+  upstream poll — finding M-5); handles unavailable source; reconfigure flow changes the source.
 - **Tests:** `test_config_flow.py`, `test_coordinator.py`, `test_sensor.py`.
+
+## Phase 2.5 — Runtime-assumption spike (implementer, WRITE action)
+- **Objective:** de-risk the two-way-sync value proposition before investing in the card.
+- **Action:** in the implementation environment, perform **one** manual `todo.update_item` on the
+  real Alexa list and confirm it appears on the Alexa app; observe `uid` stability across two
+  refreshes. (Findings M-6 / R1 / R2.)
+- **Dependencies:** Phase 2.
+- **Gate:** card work (Phases 4–5) does not start until this passes.
+- **Note:** this is a **write** action for the implementer — explicitly **out of scope** for the
+  read-only planning/review tasks; must not be run via a read-only MCP.
 
 ## Phase 3 — Services (maintenance + learning)
 - **Objective:** category CRUD + learned re-categorization.
 - **Files:** `services.py`, `services.yaml`, options flow additions.
 - **Dependencies:** Phase 2.
 - **Acceptance:** add/edit/delete category and `recategorize_item` persist and re-run;
-  delete reassigns items to `Uncategorized` (never deletes); duplicate/invalid rejected.
+  delete reassigns items to `Uncategorized` (never deletes); `edit_category` rename migrates
+  learned overrides to the new name (finding REVIEW2-003); duplicate/invalid rejected.
 - **Tests:** `test_services.py`, `test_options_flow.py`.
 
 ## Phase 4 — Frontend card: render + live + add
@@ -45,12 +57,15 @@ replaced by live-list seeding).
 - **Tests:** card unit tests (render, collapse, add).
 
 ## Phase 5 — Frontend card: tick + undo + errors
-- **Objective:** optimistic tick, per-item undo grace period, error surfacing.
+- **Objective:** complete-on-tap with reversing undo, per-item undo window, error surfacing.
 - **Files:** `frontend/**`.
-- **Dependencies:** Phase 4.
-- **Acceptance:** tap→optimistic checked→undo cancels with no call; expiry finalizes via
-  `todo.update_item`; independent per-item timers; failed sync retries then reverts + toasts.
-- **Tests:** card state-machine unit tests.
+- **Dependencies:** Phase 4, **Phase 2.5 spike passed**.
+- **Acceptance:** tap sends `todo.update_item(completed)` immediately (finding H-1); undo within
+  the window sends the reversing `needs_action` call; window expiry drops the undo affordance with
+  no extra call; independent per-item windows; failed sync retries then reverts + toasts (Req 5.4);
+  inbound source change to a tracked uid cancels the local undo affordance (source wins, M-7).
+- **Tests:** card state-machine unit tests incl. "card gone during undo window" and
+  "inbound delete during undo window".
 
 ## Phase 6 — Diagnostics, repairs, polish, docs
 - **Objective:** production-readiness.
@@ -70,6 +85,7 @@ replaced by live-list seeding).
 
 ## Recommended implementation order
 
-0 → 1 → 2 → 3 → 4 → 5 → 6 → 7. Phases 1 and (later) the card's pure logic can proceed in
-parallel with backend wiring since the categorizer and the card's timer logic are independent of
-HA I/O.
+0 → 1 → 2 → **2.5 (gate)** → 3 → 4 → 5 → 6 → 7. Phases 1 and (later) the card's pure logic can
+proceed in parallel with backend wiring since the categorizer and the card's timer logic are
+independent of HA I/O. The Phase 2.5 spike gates the card phases (4–5) but not the service phase
+(3), which can proceed in parallel.

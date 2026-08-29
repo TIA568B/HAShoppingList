@@ -27,7 +27,12 @@ flowchart LR
 - If `normalized in overrides`, assign `overrides[normalized]`. This is how manual corrections
   persist and win over keywords (Req 2.4, 6.2). Resolves gap G2.
 - If the override points at a category that no longer exists, fall through to keyword matching
-  (self-healing after a category delete).
+  (self-healing after a category delete). Note: a category **rename** does *not* rely on this
+  self-heal — `edit_category` migrates overrides to the new name so learning is preserved (doc 06,
+  finding REVIEW2-003).
+- Overrides are keyed by **normalized item text**, not `uid`, so learning is uid-independent: if
+  an item is deleted on Alexa and a same-named item re-added later (new `uid`), it inherits its
+  learned category automatically. (Finding REVIEW2-005.)
 
 ### 3. Keyword match
 
@@ -66,11 +71,22 @@ On first setup:
 2. Read the **current source list including completed items** via `todo.get_items`
    (both statuses) — this is the corpus (completed items are retained by `alexa_devices`).
 3. Categorize each corpus item with the default map; anything unmatched sits in
-   `Uncategorized`. No separate "review before live" gate is required because the map is
-   editable live via services/card and nothing is destructive — but the card surfaces the
-   `Uncategorized` bucket prominently so the user can triage (satisfies the intent of Req 1.7).
+   `Uncategorized`. There is no *blocking* "review before live" gate, because the map only
+   affects **display grouping** — it never mutates the Alexa list — so an unreviewed map has a
+   cosmetic, fully reversible blast radius. Instead, Req 1.7's intent is met by two
+   non-destructive affordances: (a) the card surfaces the `Uncategorized` bucket prominently, and
+   (b) on **first setup** the card shows a one-time, dismissible "Review your categories" banner
+   linking to the settings panel. This satisfies the *intent* of Req 1.7 (a review opportunity
+   before relying on the mapping) without blocking setup (Req 1.8). See doc 15 OQ5 — this
+   reinterpretation of a hard SHALL is escalated for human confirmation. (Finding M-1 / F-02.)
 4. Optional (future): a one-shot "seed keywords from current list" helper that suggests adding
    frequent uncategorized terms as keywords — deferred, listed in doc 15.
+
+> **Seed source — export path considered and dropped for v1.** Req 1.1 offered "a user-supplied
+> export" as an alternative seed source. The plan seeds from the live list (active + completed)
+> plus learn-over-time and does **not** implement an import path in v1: with a non-authoritative,
+> continuously-learning map, a one-off import adds scope without durable value. It remains a
+> possible future optional import. (Finding L-1 / F-01.)
 
 ## Meat/milk ambiguity handling
 

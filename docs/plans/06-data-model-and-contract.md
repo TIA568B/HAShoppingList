@@ -81,7 +81,7 @@ The sensor's `extra_state_attributes`:
 
 ```jsonc
 {
-  "attributes_version": 1,
+  "attributes_version": 2,
   "source_entity_id": "todo.david_carson_amazon_gmail_com_shopping_list",
   "last_synced": "2026-08-29T16:12:11+01:00",
   "total_unchecked": 12,
@@ -91,6 +91,13 @@ The sensor's `extra_state_attributes`:
     "show_completed": false,
     "collapse_empty_categories": true
   },
+  // Read path for the card's category-settings panel (Req 6.1 "view categories + keywords").
+  // Ordered like `categories`; excludes the implicit Uncategorized bucket (it has no keywords).
+  // (Finding M-2.)
+  "category_definitions": [
+    { "name": "Produce", "keywords": ["apple", "banana", "carrot", "lettuce", "onion"] },
+    { "name": "Milk",    "keywords": ["milk", "oat milk", "soy milk", "almond milk"] }
+  ],
   "categories": [
     {
       "name": "Produce",
@@ -113,11 +120,31 @@ The sensor's `extra_state_attributes`:
 
 Rules:
 - `categories` is ordered by the stored category order; `Uncategorized` always last.
+- `category_definitions` mirrors the stored map (name + keyword list) in the same order,
+  giving the card a read source for the settings panel without a mutating call (Req 6.1). It
+  omits `Uncategorized` (no keywords). Keep it small; for a very large map, fall back to the
+  websocket read command instead (see doc 15 R7 / M-4).
 - Each category includes `collapsed` computed from the collapse option + whether it has zero
   unchecked items.
 - When `show_completed` is false, `items` contains only unchecked items but `collapsed`/counts
   still reflect that the category is "done".
-- `attributes_version` gates the card; bump it on any breaking change and update this doc.
+- `attributes_version` gates the card; bump it on any breaking change and update this doc. It was
+  bumped **1 → 2** when `category_definitions` was added (additive; finding M-2).
+- **`attributes_version` (this frontend contract) and the store `schema_version` (persistence,
+  above) are independent counters** — they version different things and need not move together
+  (followup02 FO-2).
+
+### Source `todo.get_items` response mapping (canonical)
+
+The coordinator builds the projection from the `todo.get_items` response, whose shape is:
+
+```jsonc
+{ "todo.<source>": { "items": [ { "summary": "oat milk", "uid": "amzn1.item.abc", "status": "needs_action" } ] } }
+```
+
+Mapping into `SourceItem`: `name = summary`, `uid = uid`, `completed = (status == "completed")`.
+The response is keyed by entity id; read `response[source_entity_id]["items"]`. (Finding
+REVIEW2-001.)
 
 > **HA attribute size note:** entity attributes are capped (~16 KB when recorded). A typical
 > shopping list is tiny, but to be safe: exclude the sensor from recorder and keep item objects
@@ -164,6 +191,11 @@ Behavioral contract:
   `apply_to_uid` is given, it also immediately re-runs so that item moves now.
 - `edit_category`/`add_category` validate that `name` is non-empty, unique, control-char free,
   length-limited.
+- `edit_category` with `new_name` **migrates learned overrides**: in the same transaction, any
+  `overrides[*] == old_name` is rewritten to `new_name` before persisting and recomputing, so a
+  rename does not silently orphan accumulated learning. Category order/position is preserved.
+  (Finding REVIEW2-003.)
 - `delete_category` removes the category and its keywords; any item currently matching it falls
-  through to `Uncategorized` on the next recompute (items are never deleted — Req 6.3).
+  through to `Uncategorized` on the next recompute (items are never deleted — Req 6.3). Overrides
+  pointing at the deleted category self-heal (fall through to keyword/Uncategorized — see doc 07).
 - All services persist the store, then request a coordinator recompute.

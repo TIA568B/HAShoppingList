@@ -79,5 +79,8 @@ custom Lovelace card (frontend/) → subscribes to the sensor + calls todo/nativ
 - No second persisted copy of the shopping list.
 - No direct calls to Amazon APIs — always go through the `todo` entity/services.
 - No blocking I/O in the event loop.
-- No business logic in the card that the backend cannot also enforce.
+- No business logic in the card that the backend cannot also enforce. (The tick model is
+  **complete-on-tap**: the completion is sent through the public `todo.*` service immediately, so
+  the backend always owns the end state; the card's grace window governs undo only. See
+  `frontend.md` and `docs/plans/08`.)
 - No monolithic catch-all files.

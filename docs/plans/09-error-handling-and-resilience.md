@@ -11,7 +11,7 @@
 
 | Failure | Detection | Response |
 |---------|-----------|----------|
-| Source entity missing at setup | `hass.states.get(source)` is None | Raise `ConfigEntryNotReady`; create a repair issue guiding to `alexa_devices` |
+| Source entity missing/unavailable at **first refresh** | `hass.states.get(source)` None or state `unavailable`/`unknown` | Raise `ConfigEntryNotReady` (HA retries setup); create a repair issue guiding to `alexa_devices`. Distinct from a read error with the entity present, which is `UpdateFailed` (finding L-3) |
 | Source entity `unavailable`/`unknown` at runtime | state listener / poll | Sensor becomes unavailable; keep last projection cached; repair issue if prolonged |
 | `todo.get_items` read fails | exception from service call | `UpdateFailed`; coordinator marks `last_update_success=False`; retry on next event/poll |
 | Invalid/empty response | schema/shape check | Treat as read failure (`UpdateFailed`); do not corrupt the cached projection |
@@ -22,11 +22,17 @@
 
 ## Retry & backoff (writes)
 
-- The card performs the write; on failure it retries up to **3** attempts with exponential
-  backoff (e.g. 0.5s, 1.5s, 4s + jitter).
+- The card performs the write **immediately on the user action** (complete-on-tap, reversing
+  undo, or add — see doc 08); on failure it retries up to **3** attempts with exponential backoff
+  (e.g. 0.5s, 1.5s, 4s + jitter).
 - On exhaustion: revert the optimistic change and show a persistent, dismissible error toast
   naming the item and action (Req 5.4). The item returns to its prior (unchecked/absent) state
   so nothing is silently lost.
+- **Why no deferred client-only finalize (finding H-1):** completion is not held behind a
+  client-side grace timer. Because the write is sent on tap, a closed/backgrounded/crashed card
+  cannot silently drop a completion — the change is already synced. The grace window governs undo
+  only. This is the design's resolution of the "never silently drops" guarantee (Req 5.4) and the
+  architecture rule "no business logic in the card the backend cannot also enforce."
 - Reads (coordinator) simply wait for the next event/poll — no aggressive retry loop against
   Amazon (respect the upstream integration's rate posture).
 
@@ -42,11 +48,12 @@
   sync failure does not affect others (mirrors the source integration's per-item delete/refresh
   approach).
 
-## Home Assistant restart
+## Home Assistant restart / card closed
 
 - Category map + overrides persist in the Store. The projection is rebuilt on first refresh.
-  No in-flight grace-period timers survive a restart — acceptable: an un-finalized tick simply
-  wasn't sent, so the item remains unchecked (safe default; nothing lost).
+- With complete-on-tap (doc 08), there are **no** in-flight server-side finalize timers to lose.
+  A tapped item's completion is already synced to the source; a card close/restart during the
+  undo window only removes the ability to undo — nothing is dropped (safe direction, Req 5.4).
 
 ## External outage (Amazon/Alexa down)
 

@@ -27,6 +27,12 @@ integration conventions.
 - `dependencies: ["todo"]` — guarantees the `todo` building block (and its services) is loaded.
 - `requirements: []` — stdlib only (see doc 13). Add + pin here only if unavoidable.
 
+> **Why not `after_dependencies: ["alexa_devices"]`?** The integration deliberately treats the
+> source as *any* `todo` provider, not specifically `alexa_devices`, so we do not couple manifest
+> load order to that integration. If `alexa_devices` has not finished setting up its entity when
+> we set up, the coordinator's first refresh raises `ConfigEntryNotReady` and HA retries — the
+> idiomatic ordering mechanism. (Finding L-2.)
+
 ## Config flow
 
 Single user step:
@@ -43,9 +49,15 @@ Single user step:
 Default selection heuristic: prefer a `todo` entity whose id contains `shopping` on the
 `alexa_devices` platform.
 
+**Strings / translations discipline.** All config/options/reconfigure step titles, field labels,
+abort reasons (`no_alexa_lists`, `already_configured`), and error keys are defined as constants
+and mirrored in both `strings.json` and `translations/en.json`, kept in sync in the same change
+set. No user-facing string is hard-coded in flow logic. (Finding L-8 / S-09.)
+
 ## Options flow
 
-- `grace_period_seconds` (int, 5–30, default **9**).
+- `grace_period_seconds` (int, **8–30**, default **9**). The 8s floor respects the spec's
+  8–10s target (Req 4.1); the widened ceiling is a harmless convenience. (Finding L-7.)
 - `show_completed` (bool, default false).
 - `collapse_empty_categories` (bool, default true).
 - `redact_items_in_diagnostics` (bool, default true).
@@ -55,6 +67,21 @@ Default selection heuristic: prefer a `todo` entity whose id contains `shopping`
 > Category/keyword editing is **not** in the options flow — it is done via services (see
 > below) and the card, because it is high-frequency, structured, and needs to apply
 > immediately (Req 6.2).
+
+> **Source-entity change is *not* an options-flow field.** Because `entry.unique_id` is the
+> source entity id (one entry per source), changing the source cannot be a mutable option. To
+> change the source, the user either deletes and re-adds the entry, or uses the **reconfigure
+> flow** below. (Finding M-3.)
+
+### Reconfigure flow (source-entity change)
+
+- Implement `async_step_reconfigure` on the config flow. It re-runs the source-selection step,
+  and on submit updates `entry.data["source_entity_id"]` **and** the entry `unique_id`
+  atomically (via `async_update_reload_and_abort` with the new `unique_id`), then reloads.
+- The category store is keyed by `entry_id` (see doc 06), so learned data survives a source
+  change. The sensor `unique_id` is entry-based, so it is unaffected.
+- This is the single sanctioned path for pointing the integration at a different `alexa_devices`
+  todo list without losing learned categories.
 
 ## Configuration entries
 
@@ -98,9 +125,17 @@ Default selection heuristic: prefer a `todo` entity whose id contains `shopping`
 - `_async_update_data`:
   1. Call `todo.get_items` on the source entity with
      `data={"status": ["needs_action", "completed"]}, return_response=True`.
-  2. Normalize into `SourceItem` dataclasses (uid, name, completed).
-  3. Run `categorizer.build_projection(items, category_map, overrides, options)`.
-  4. Return the `Projection`.
+  2. Parse the response envelope — `todo.get_items` returns
+     `{ "<source_entity_id>": { "items": [ {"summary": ..., "uid": ..., "status": ...} ] } }`.
+     Read the list at `response[source_entity_id]["items"]`. (Finding REVIEW2-001.)
+  3. Normalize each item into a `SourceItem` dataclass: `name = item["summary"]`,
+     `uid = item["uid"]`, `completed = item["status"] == "completed"`.
+  4. Run `categorizer.build_projection(items, category_map, overrides, options)`.
+  5. Return the `Projection`.
+- **First-refresh readiness vs. read failure:** if the source entity is absent or
+  `unavailable`/`unknown` at first refresh, raise `ConfigEntryNotReady` (HA retries setup). A
+  genuine error while the entity is present (service raises, malformed envelope) is `UpdateFailed`.
+  (Finding L-3; see doc 09.)
 - Debounce source events (e.g. 0.5s) to coalesce bursts.
 - On read failure raise `UpdateFailed`; availability follows `last_update_success`.
 

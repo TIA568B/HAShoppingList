@@ -1,9 +1,12 @@
 ---
 inclusion: fileMatch
-fileMatchPattern: 'tests/**'
+fileMatchPattern: '{tests/**,frontend/**}'
 ---
 
 # Testing Steering
+
+Applies to backend tests under `tests/**` and to the card's own tests under `frontend/**`
+(so card tests receive the testing steering — finding H-2 / S-10).
 
 ## Framework and tooling
 
@@ -26,18 +29,24 @@ fileMatchPattern: 'tests/**'
   no-match->Uncategorized, empty/odd input.
 - **Config flow:** happy path (select source todo entity), abort on no todo entities, abort
   on already-configured, single-instance-per-source rule.
-- **Options flow:** grace-period tuning, source-entity change, category-map edits round-trip.
+- **Options flow:** grace-period tuning (range 8–30s), category-map edits round-trip. Options must
+  **not** change the source entity.
+- **Reconfigure flow:** changing the source entity updates `entry.data` and `unique_id` atomically
+  and preserves the (entry-keyed) category store.
 - **Coordinator:** builds projection from mocked `todo.get_items` response (active +
   completed), recomputes on source state change, debounces bursts, handles source entity
   unavailable, safety-net poll.
-- **Sensor:** attribute schema matches the documented frontend contract exactly; availability
-  reflects coordinator + source state.
+- **Sensor:** attribute schema matches the documented frontend contract exactly (currently
+  `attributes_version: 2`, including `category_definitions`); availability reflects coordinator +
+  source state.
 - **Services:** `recategorize_item` persists a learned override and re-runs; `delete_category`
-  reassigns to `Uncategorized` (never deletes items); add/edit validate input; invalid input
-  raises.
-- **Sync / error paths:** completing an item calls `todo.update_item(status=completed)` by
-  `uid`; undo calls `status=needs_action`; failed sync retries then surfaces an error and
-  reverts optimistic state (Requirement 5.4).
+  reassigns to `Uncategorized` (never deletes items); `edit_category` rename **migrates learned
+  overrides** to the new name; add/edit validate input; invalid input raises.
+- **Sync / error paths:** completion is sent **on tap** via `todo.update_item(status=completed)`
+  by `uid` (complete-on-tap); undo is the reversing `status=needs_action` call; failed sync
+  retries then surfaces an error and reverts optimistic state (Requirement 5.4). Cover the
+  "card gone during undo window" case (completion already synced, nothing dropped) and the
+  "inbound source change to a tracked uid cancels the local undo affordance" case (source wins).
 - **Diagnostics:** output is redacted; no secrets or (when redaction on) item text leak.
 
 ## Mocking expectations
@@ -51,9 +60,10 @@ fileMatchPattern: 'tests/**'
 ## Regression tests
 
 - Every bug fix adds a failing-first test reproducing the bug.
-- Keep a regression test asserting the source entity is
-  `todo.david_carson_amazon_gmail_com_shopping_list`-style (alexa_devices platform) selection
-  logic and that `todo.shopping_list` is not silently chosen.
+- Keep a regression test asserting source selection targets an entity on the **`alexa_devices`
+  platform** and never silently chooses an entity on the `shopping_list` platform. Assert on the
+  **platform**, not a specific entity id — the source entity id is account-derived and
+  user-selectable, so a hard-coded id is brittle and install-specific (finding M-8 / S-03).
 
 ## Frontend
 

@@ -4,8 +4,12 @@ This directory is the **implementation source of truth**. It consolidates the re
 `docs/specs/` with verified Home Assistant environment findings, and overrides the spec where
 reality differs (reality wins; overrides are documented, specs are left untouched).
 
-> **Status:** Design complete, awaiting review and approval. **Do not begin implementation
-> until this plan is reviewed and approved.**
+> **Status:** Design complete and **remediated** against two review passes. The review
+> deliverables live in [review/](review/): the original review, `followup01/` (which flagged that
+> an earlier remediation was described but not applied), `finding-disposition.md`, and
+> `revision-summary.md`. All accepted findings are now **applied on disk**. **Do not begin
+> implementation** until a final independent re-verification and the outstanding human decisions
+> (OQ3/OQ5/M-5/M-6) are resolved.
 
 ## Read in this order
 
