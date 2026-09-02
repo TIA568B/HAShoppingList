@@ -19,7 +19,7 @@ async def test_load_seeds_defaults(hass: HomeAssistant) -> None:
     assert any(c.name == "Milk" for c in category_map.categories)
     assert any(c.name == "Fake Meat" for c in category_map.categories)
     shop_names = {s.name for s in category_map.shops}
-    assert shop_names == {"Aldi", "Asda", "Tesco"}
+    assert shop_names == {"Aldi", "Asda", "Tesco", "Waitrose", "Morrisons", "Lidl", "Sainsburys"}
     assert NO_PREFERENCE not in shop_names  # implicit, not stored
     assert category_map.overrides == {}
     assert category_map.shop_overrides == {}
@@ -43,7 +43,15 @@ async def test_partial_store_missing_shop_keys_gets_defaults(
     assert [c.name for c in category_map.categories] == ["Produce"]
     assert category_map.overrides == {"apple": "Produce"}
     # Missing keys injected from defaults.
-    assert {s.name for s in category_map.shops} == {"Aldi", "Asda", "Tesco"}
+    assert {s.name for s in category_map.shops} == {
+        "Aldi",
+        "Asda",
+        "Tesco",
+        "Waitrose",
+        "Morrisons",
+        "Lidl",
+        "Sainsburys",
+    }
     assert category_map.shop_overrides == {}
 
 

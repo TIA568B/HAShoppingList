@@ -157,9 +157,7 @@ async def test_remove_panel_calls_frontend_remove(hass: HomeAssistant) -> None:
     ):
         await async_register_panel(hass, "1.0.0")
 
-    with patch(
-        "homeassistant.components.frontend.async_remove_panel"
-    ) as remove:
+    with patch("homeassistant.components.frontend.async_remove_panel") as remove:
         async_remove_panel(hass)
 
     remove.assert_called_once_with(hass, PANEL_URL_PATH)

@@ -501,11 +501,16 @@ class AlexaShoppingCategoriserCard extends HTMLElement {
     }
     const allShopNames = groups.map((g) => g.name);
 
+    let renderedShops = 0;
     for (const shop of groups) {
-      container.appendChild(this._renderShop(shop, grace, allShopNames));
+      const el = this._renderShop(shop, grace, allShopNames);
+      if (el !== null) {
+        container.appendChild(el);
+        renderedShops += 1;
+      }
     }
 
-    if (!groups.length) {
+    if (renderedShops === 0) {
       container.appendChild(this._msg("Your shopping list is empty."));
     }
   }
@@ -612,16 +617,28 @@ class AlexaShoppingCategoriserCard extends HTMLElement {
 
     if (collapsed) return section;
 
+    let renderedCategories = 0;
     for (const cat of shop.categories || []) {
-      section.appendChild(this._renderCategory(shop, cat, grace));
+      const el = this._renderCategory(shop, cat, grace);
+      if (el !== null) {
+        section.appendChild(el);
+        renderedCategories += 1;
+      }
     }
+    // A shop with no non-empty categories is not displayed at all.
+    if (renderedCategories === 0) return null;
     return section;
   }
 
   _renderCategory(shop, cat, grace) {
+    const items = cat.items || [];
+    const unchecked = items.filter((i) => !i.checked).length;
+    // Empty categories (zero unchecked items) are not displayed at all — no header,
+    // no placeholder. This matches the header count shown to the user.
+    if (unchecked === 0) return null;
+
     const wrap = document.createElement("div");
     wrap.className = "asc-cat";
-    const unchecked = (cat.items || []).filter((i) => !i.checked).length;
     const collapsed = this._collapse.isCategoryCollapsed(shop.name, cat.name, !!cat.collapsed);
 
     const header = document.createElement("button");
@@ -638,7 +655,7 @@ class AlexaShoppingCategoriserCard extends HTMLElement {
 
     const list = document.createElement("ul");
     list.className = "asc-items";
-    for (const item of cat.items || []) {
+    for (const item of items) {
       list.appendChild(this._renderItem(item, grace));
     }
     wrap.appendChild(list);

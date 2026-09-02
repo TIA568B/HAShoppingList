@@ -75,7 +75,20 @@ def test_normalize_bare_quantity_kept() -> None:
         ("steak", UNCATEGORISED),  # not Drinks via "tea"
         ("rollmop", UNCATEGORISED),  # not Bakery via "roll"
         ("bread", "Bakery"),
-        ("carrots", "Produce"),
+        ("carrots", "Fruit & Veg"),
+        # New taxonomy (this batch of tweaks).
+        ("cucumber", "Fruit & Veg"),
+        ("garlic", "Fruit & Veg"),
+        ("teriyaki sauce", "Sauces"),
+        ("mango chutney", "Sauces"),
+        ("salad cream", "Sauces"),
+        ("nappies", "Baby"),
+        ("pizza", "Frozen"),
+        ("chickpeas", "Pantry"),
+        ("olives", "Pantry"),
+        ("yogurts", "Chilled"),
+        ("chicken", "Fake Meat"),
+        ("ice tea", "Drinks"),
     ],
 )
 def test_categorise_keyword(raw: str, expected: str) -> None:
@@ -108,6 +121,15 @@ def test_categorise_no_keywords_category() -> None:
 
 def test_shop_keyword_rule() -> None:
     assert resolve_shop(normalize("nappies"), SHOPS, {}) == "Aldi"
+
+
+def test_shop_teriyaki_and_veggie_pasta_map_to_aldi() -> None:
+    assert resolve_shop(normalize("teriyaki sauce"), SHOPS, {}) == "Aldi"
+    assert resolve_shop(normalize("veggie pasta"), SHOPS, {}) == "Aldi"
+
+
+def test_shop_pizza_maps_to_waitrose() -> None:
+    assert resolve_shop(normalize("pizza"), SHOPS, {}) == "Waitrose"
 
 
 def test_shop_name_in_text_beats_keyword_rule() -> None:

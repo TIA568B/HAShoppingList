@@ -8,27 +8,94 @@ from __future__ import annotations
 
 from .models import Category, Shop
 
-# Default category taxonomy (order is significant: more specific categories earlier).
-# Vegan rules: milk -> Milk, dairy-style -> Chilled, meat-style -> Fake Meat.
+# Default category taxonomy (order is significant: more specific categories earlier;
+# whole-word matching, first match wins). Vegan rules: milk -> Milk, dairy-style ->
+# Chilled, meat-style -> Fake Meat.
 _DEFAULT_CATEGORIES: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("Produce", ("apple", "banana", "carrot", "carrots", "lettuce", "onion", "onions")),
+    (
+        "Fruit & Veg",
+        (
+            "apple",
+            "banana",
+            "carrot",
+            "carrots",
+            "lettuce",
+            "onion",
+            "onions",
+            "cucumber",
+            "garlic",
+            "tomato",
+            "tomatoes",
+            "potato",
+            "potatoes",
+            "pepper",
+            "peppers",
+            "mushroom",
+            "mushrooms",
+            "spinach",
+            "broccoli",
+        ),
+    ),
     ("Milk", ("milk", "oat milk", "soy milk", "soya milk", "almond milk", "oat drink")),
-    ("Chilled", ("cheese", "yogurt", "yoghurt", "butter", "cream", "tofu")),
+    # Sauces before Chilled so multi-word sauces (e.g. "salad cream") win over Chilled's
+    # bare "cream" keyword (whole-word, first-match-wins ordering).
+    (
+        "Sauces",
+        (
+            "sauce",
+            "teriyaki",
+            "teriyaki sauce",
+            "soy sauce",
+            "soya sauce",
+            "ketchup",
+            "mayo",
+            "mayonnaise",
+            "mango chutney",
+            "chutney",
+            "salad cream",
+            "pesto",
+        ),
+    ),
+    (
+        "Chilled",
+        ("cheese", "yogurt", "yogurts", "yoghurt", "yoghurts", "butter", "cream", "tofu"),
+    ),
+    # Fake Meat before Pantry so meat-substitute terms win first.
     (
         "Fake Meat",
-        ("sausages", "bacon", "mince", "chicken pieces", "burgers", "ham"),
+        (
+            "sausages",
+            "bacon",
+            "mince",
+            "chicken",
+            "chicken pieces",
+            "burgers",
+            "ham",
+        ),
     ),
+    ("Baby", ("nappies", "nappy", "wipes", "baby wipes", "baby food", "formula")),
     ("Bakery", ("bread", "bagel", "roll", "sourdough")),
-    ("Frozen", ("frozen peas", "vegan ice cream", "chips")),
-    ("Drinks", ("juice", "squash", "coffee", "tea")),
-    ("Pantry", ("pasta", "rice", "lentils", "beans", "tinned")),
+    ("Frozen", ("frozen peas", "vegan ice cream", "chips", "pizza")),
+    ("Drinks", ("juice", "squash", "coffee", "tea", "ice tea", "iced tea")),
+    (
+        "Pantry",
+        (
+            "pasta",
+            "rice",
+            "lentils",
+            "beans",
+            "chickpeas",
+            "olives",
+            "tinned",
+        ),
+    ),
     ("Household", ("toilet roll", "washing up liquid", "bin bags")),
 )
 
 # Default shops (excluding the implicit, non-removable "No Preference").
 # Order is significant for keyword-rule resolution.
 _DEFAULT_SHOPS: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("Aldi", ("nappies", "milk")),
+    ("Aldi", ("nappies", "milk", "teriyaki", "teriyaki sauce", "veggie pasta")),
     (
         "Asda",
         (
@@ -66,6 +133,10 @@ _DEFAULT_SHOPS: tuple[tuple[str, tuple[str, ...]], ...] = (
         ),
     ),
     ("Tesco", ()),
+    ("Waitrose", ("pizza",)),
+    ("Morrisons", ()),
+    ("Lidl", ()),
+    ("Sainsburys", ()),
 )
 
 

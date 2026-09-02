@@ -6,6 +6,32 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-02
+
+### Added
+- New default categories: **Fruit & Veg** (replaces Produce; adds cucumber, garlic, tomato,
+  potato, pepper, mushroom, spinach, broccoli, …), **Sauces** (teriyaki, soy sauce, ketchup,
+  mayo, mango chutney, salad cream, pesto, …), and **Baby** (nappies, wipes, baby food,
+  formula).
+- New default shops: **Waitrose** (keyword rule `pizza`), **Morrisons**, **Lidl**,
+  **Sainsburys** (alongside existing Aldi, Asda, Tesco).
+- Default keyword rules: `teriyaki`/`teriyaki sauce`/`veggie pasta` → **Aldi**; `pizza` →
+  **Waitrose** shop and **Frozen** category.
+- Expanded category keywords so common items categorise on first sight (chickpeas/olives →
+  Pantry, yogurts → Chilled, chicken → Fake Meat, ice tea → Drinks).
+
+### Changed
+- **Empty categories and shops are hidden.** A category with zero unchecked items (count `0`)
+  no longer renders a header, and a shop whose categories are all empty is hidden entirely.
+- Category match order: **Sauces** is evaluated before **Chilled** so multi-word sauces (e.g.
+  "salad cream") win over Chilled's bare `cream` keyword. Whole-word, first-match-wins semantics
+  are unchanged.
+
+### Notes
+- Category/shop changes affect the **default seed** used on a fresh setup. Existing installs keep
+  their stored map; use `reload_maps` only if you want to re-seed, or add the new
+  categories/shops via the services / card. Learned overrides are preserved.
+
 ## [0.2.0] - 2026-09-02
 
 ### Added

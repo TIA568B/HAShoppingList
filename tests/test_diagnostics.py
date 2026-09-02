@@ -31,7 +31,10 @@ async def test_diagnostics_redacts_item_text_by_default(
 
     # Summary counts present.
     assert diag["map_summary"]["category_count"] > 0
-    assert diag["map_summary"]["shop_count"] == 3
+    # Shop count mirrors the seeded default shops (excludes implicit No Preference).
+    from custom_components.alexa_shopping_categoriser.defaults import default_shops
+
+    assert diag["map_summary"]["shop_count"] == len(default_shops())
     # Item text is redacted (default option true) - the literal must not appear.
     dumped = str(diag)
     assert "oat milk" not in dumped

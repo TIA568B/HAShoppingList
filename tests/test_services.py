@@ -180,8 +180,8 @@ async def test_add_shop_reserved_and_duplicate(
 
 
 async def test_add_shop_with_keywords(hass: HomeAssistant, loaded_entry: MockConfigEntry) -> None:
-    await _call(hass, SERVICE_ADD_SHOP, {ATTR_NAME: "Lidl", ATTR_KEYWORDS: ["bratwurst"]})
-    shop = next(s for s in _map(loaded_entry).shops if s.name == "Lidl")
+    await _call(hass, SERVICE_ADD_SHOP, {ATTR_NAME: "Coop", ATTR_KEYWORDS: ["bratwurst"]})
+    shop = next(s for s in _map(loaded_entry).shops if s.name == "Coop")
     assert shop.keywords == ["bratwurst"]
 
 
