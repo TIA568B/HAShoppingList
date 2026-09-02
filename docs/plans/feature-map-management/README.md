@@ -53,7 +53,8 @@ seed data out of Python into a shipped JSON file, and give the user an explicit
 | 02 | [02-card-settings-panels.md](02-card-settings-panels.md) | Option A: the live editor UX, contract reads, service writes, validation, instant recompute |
 | 03 | [03-migration-and-reload.md](03-migration-and-reload.md) | Option D: `default_map.json`, initial seed, upgrade re-seed migration, and the reload-from-JSON admin action |
 | 04 | [04-security-and-testing.md](04-security-and-testing.md) | Input validation, XSS, redaction; test matrix additions |
-| 05 | [05-open-questions.md](05-open-questions.md) | Decisions needed / assumptions / risks for this feature |
+| 05 | [05-open-questions.md](05-open-questions.md) | Resolved decisions (OQ-A..D), assumptions, risks |
+| 06 | [06-implementation-plan.md](06-implementation-plan.md) | Phased build plan (M1–M6) for 0.4.0 |
 
 ## Traceability
 

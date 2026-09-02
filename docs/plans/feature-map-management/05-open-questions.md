@@ -15,22 +15,21 @@ are not re-litigated.
   click. Replace semantics, with a confirmation warning.
 - Single user for now → no need for upgrade-safe merge yet (recorded as a future option).
 
-## Open questions (need an answer before build)
+## Resolved decisions (were open questions; user-confirmed 2026-09-02)
 
-- **OQ-A — Learned overrides on the one-time upgrade migration:** preserve them (recommended,
-  costs nothing, they self-heal) or wipe them too (acceptable since it is test data)? Default
-  assumption if unanswered: **preserve**.
-- **OQ-B — Category/shop reordering in the panel:** order is significant (first-match-wins). Do
-  we add reordering now? If yes, it needs either a new `reorder_categories`/`reorder_shops`
-  service or an `order` field on `edit_*`. If deferred, the panel edits names/keywords but not
-  order (order stays as seeded). Default assumption: **defer reordering** to keep 0.4.0 focused;
-  revisit if the seeded order proves wrong in use.
-- **OQ-C — Reload action placement:** card settings-panel button (recommended) vs a
-  Developer-Tools-only service vs both. Default assumption: **button + backing
-  `reload_defaults` service** (button calls the service).
-- **OQ-D — Naming:** confirm `reload_defaults` (new, re-seed from shipped JSON) as distinct from
-  the existing `reload_maps` (re-read store from disk). If the distinction is confusing, an
-  alternative is `reset_to_defaults`. Default assumption: **`reload_defaults`**.
+- **OQ-A — Learned overrides on the one-time upgrade migration → KEEP.** The re-seed replaces
+  categories/shops but **preserves** `overrides`/`shop_overrides`; they self-heal if they point
+  at a category/shop the re-seed removed.
+- **OQ-B — Category/shop reordering → DEFER to a later release.** 0.4.0 panels edit
+  names/keywords and add/delete only; **order is not user-editable** and stays as seeded
+  (first-match-wins order from `default_map.json`). No `reorder_*` service and no `order` field
+  in 0.4.0, so the sensor contract shape is unchanged (`attributes_version` stays 3).
+- **OQ-C — Reload action placement → BUTTON + backing service.** A "Reload defaults" button in
+  the card settings panel (behind a confirm dialog) that calls a new backing service; the
+  service is also usable from Developer Tools / automations.
+- **OQ-D — Naming → `reload_defaults`.** New service, re-seeds from the shipped
+  `default_map.json` (replace). Distinct from the existing `reload_maps` (re-read store from
+  disk). Kept the `reload_defaults` name.
 
 ## Assumptions
 

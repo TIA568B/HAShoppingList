@@ -43,11 +43,10 @@ On upgrading to the version that ships this feature, migrate the store from the 
 - **Rationale / user decision:** the user has confirmed the current store is **test data only
   ("not used in anger")** and explicitly wants earlier mappings reflected on upgrade. So this
   migration **replaces** categories + shops wholesale rather than doing a delicate merge.
-- **Learned overrides:** preserved by default (they key on normalised text and self-heal if
-  they point at a now-absent category/shop — existing behaviour). Because the store is test
-  data, wiping them too would also be acceptable, but preserving is the safer default and costs
-  nothing. **Open question OQ-A in `05`**: confirm preserve-vs-wipe for overrides on this
-  one-time migration.
+- **Learned overrides: PRESERVED** (decision OQ-A, user-confirmed). They key on normalised text
+  and self-heal if they point at a category/shop the re-seed removed (existing behaviour). The
+  migration replaces `categories`/`shops` only; `overrides`/`shop_overrides` are carried over
+  untouched.
 - Mechanics: bump the store `schema_version`, add an ordered migrator in `store.py` that loads
   `default_map.json` and overwrites `categories`/`shops`, persists, and recomputes. A
   migration test is required (documentation/testing steering).
