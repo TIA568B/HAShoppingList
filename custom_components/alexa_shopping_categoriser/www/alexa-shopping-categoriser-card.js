@@ -111,6 +111,10 @@ class AddReconciler {
   }
 }
 
+// The always-present default shop bucket for items with no assigned store. When focusing a
+// shop we keep this expanded too, since unassigned items can be picked up at any store.
+const NO_PREFERENCE = "No Preference";
+
 // Card-local manual collapse state, independent per shop and per category (Req 7.7).
 // Never written back to the sensor. Composes with the server auto-collapse hint:
 // - manual override (if the user has explicitly toggled) wins;
@@ -147,16 +151,19 @@ class CollapseState {
     return this._cats.has(key) ? this._cats.get(key) : autoHint;
   }
 
-  // Collapse every shop except the given one ("focus this shop").
+  // Collapse every shop except the focused one — but always keep "No Preference" expanded
+  // too, since unassigned items can be bought at any store you're focusing on.
   focusShop(focusShop, allShopNames) {
     for (const name of allShopNames) {
-      this._shops.set(name, name !== focusShop);
+      const keepOpen = name === focusShop || name === NO_PREFERENCE;
+      this._shops.set(name, !keepOpen);
     }
   }
 
-  // True when `focusShop` is the only expanded shop (i.e. it is currently focused): it is
-  // expanded and every other shop is collapsed. `autoHints` maps shopName -> server hint so
-  // shops the user hasn't manually toggled are judged by their effective state.
+  // True when `focusShop` is currently focused: it is expanded and every other shop is
+  // collapsed, ignoring "No Preference" (which focus deliberately leaves open). `autoHints`
+  // maps shopName -> server hint so shops the user hasn't manually toggled are judged by
+  // their effective state.
   isShopFocused(focusShop, allShopNames, autoHints = {}) {
     let sawFocus = false;
     for (const name of allShopNames) {
@@ -164,8 +171,10 @@ class CollapseState {
       if (name === focusShop) {
         if (collapsed) return false; // the focused shop must itself be expanded
         sawFocus = true;
+      } else if (name === NO_PREFERENCE) {
+        continue; // focus leaves No Preference open, so its state never breaks focus
       } else if (!collapsed) {
-        return false; // some other shop is still expanded => not focused
+        return false; // some other real shop is still expanded => not focused
       }
     }
     return sawFocus;

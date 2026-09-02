@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.9.5] - 2026-09-02
+
+### Changed
+- **Focusing a shop now keeps the "No Preference" section visible too.** Items with no
+  assigned store can be picked up wherever you are, so focusing a shop collapses the other
+  *named* shops but leaves both the focused shop and "No Preference" expanded. The Focus/Show
+  all toggle detection ignores the "No Preference" section accordingly. Card bundle rebuilt
+  into `www/`. No backend or sensor-contract change.
+
 ## [0.9.4] - 2026-09-02
 
 ### Changed

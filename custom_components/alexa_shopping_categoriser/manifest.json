@@ -1,7 +1,7 @@
 {
   "domain": "alexa_shopping_categoriser",
   "name": "Alexa Shopping List Categoriser",
-  "version": "0.9.4",
+  "version": "0.9.5",
   "codeowners": ["@davidcarson"],
   "config_flow": true,
   "dependencies": ["todo"],
