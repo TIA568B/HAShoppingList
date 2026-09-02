@@ -520,6 +520,25 @@ class AlexaShoppingCategoriserCard extends HTMLElement {
       this._built = true;
     }
     const container = this._container;
+
+    // Preserve the add-item field across the full rebuild. `set hass` runs on ANY HA state
+    // change and re-renders by replacing all children, which would otherwise destroy the
+    // focused <input>, drop what the user typed, and (on mobile) dismiss the keyboard.
+    // Capture value + focus + caret here and restore them after the add row is rebuilt.
+    this._addFocus = null;
+    if (this._addInput) {
+      const active = this.shadowRoot.activeElement === this._addInput;
+      this._addFocus = {
+        value: this._addInput.value,
+        focused: active,
+        start: active ? this._addInput.selectionStart : null,
+        end: active ? this._addInput.selectionEnd : null,
+      };
+    }
+    // The current input node is about to be detached; drop the reference so an early-return
+    // render path (unavailable/empty) can't later read a stale, detached element.
+    this._addInput = null;
+
     // Clear children (rebuild body). Style node persists on the shadow root.
     container.replaceChildren();
 
@@ -632,6 +651,8 @@ class AlexaShoppingCategoriserCard extends HTMLElement {
     input.placeholder = "Add an item…";
     input.setAttribute("aria-label", "Add an item");
     stopKeyboardPropagation(input);
+    // Keep a live reference so _render can carry value/focus/caret across a rebuild.
+    this._addInput = input;
     const add = document.createElement("button");
     setText(add, "Add");
     const submit = () => {
@@ -646,6 +667,24 @@ class AlexaShoppingCategoriserCard extends HTMLElement {
     });
     row.append(input, add);
     container.appendChild(row);
+
+    // Restore what the user had typed and, if the field was focused before the rebuild,
+    // re-focus it and restore the caret. This is what stops a background HA state update
+    // from dismissing the mobile keyboard mid-typing.
+    const saved = this._addFocus;
+    if (saved) {
+      input.value = saved.value;
+      if (saved.focused) {
+        input.focus();
+        if (saved.start != null) {
+          try {
+            input.setSelectionRange(saved.start, saved.end);
+          } catch {
+            // setSelectionRange throws for some input types/states; caret restore is best-effort.
+          }
+        }
+      }
+    }
   }
 
   _renderShop(shop, grace, allShopNames) {

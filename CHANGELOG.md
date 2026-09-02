@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.9.3] - 2026-09-02
+
+### Fixed
+- **The mobile keyboard no longer disappears the moment you tap the "Add an item" box.**
+  The card re-renders by rebuilding all of its DOM whenever Home Assistant pushes any state
+  update (which happens constantly), and that was destroying the focused input mid-typing —
+  dropping the text and dismissing the on-screen keyboard. The card now preserves the add
+  field's value, focus, and caret position across a re-render, so typing survives background
+  updates. Card bundle rebuilt into `www/`. No backend or sensor-contract change.
+
 ## [0.9.2] - 2026-09-02
 
 ### Fixed
