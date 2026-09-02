@@ -32,6 +32,12 @@ reality differs (reality wins; overrides are documented, specs are left untouche
 | 14 | [14-implementation-plan.md](14-implementation-plan.md) | Phased plan, acceptance criteria, recommended order |
 | 15 | [15-risks-open-questions.md](15-risks-open-questions.md) | Risks, assumptions, open questions, decisions log |
 
+## Feature designs (post-v1 extensions)
+
+| Feature | Design | Status |
+|---------|--------|--------|
+| User-facing map management (in-card editor + JSON defaults + reload) | [feature-map-management/](feature-map-management/) | **Design only** — target 0.4.0; open questions in its `05` doc |
+
 ## One-line summary
 
 A custom Home Assistant integration (`alexa_shopping_categoriser`) that derives a live,
