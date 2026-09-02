@@ -4,7 +4,7 @@
 // error/refresh path. All user text is written via setText (never innerHTML). Reordering is
 // intentionally NOT offered in 0.4.0 (decision OQ-B, deferred).
 
-import { setText } from "./escape.js";
+import { setText, stopKeyboardPropagation } from "./escape.js";
 
 // Parse a comma-separated keyword string into a clean list.
 export function parseKeywords(text) {
@@ -34,6 +34,7 @@ function labelledInput(labelText, value, placeholder) {
   input.value = value == null ? "" : String(value);
   if (placeholder) input.placeholder = placeholder;
   input.setAttribute("aria-label", labelText);
+  stopKeyboardPropagation(input);
   wrap.append(span, input);
   return { wrap, input };
 }

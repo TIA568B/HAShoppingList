@@ -5,7 +5,7 @@
 
 import { AddReconciler } from "./add-reconciler.js";
 import { CollapseState } from "./collapse-state.js";
-import { setText } from "./escape.js";
+import { setText, stopKeyboardPropagation } from "./escape.js";
 import { renderSettings } from "./settings-panel.js";
 import { ItemState, TickController } from "./tick-controller.js";
 
@@ -360,6 +360,7 @@ export class AlexaShoppingCategoriserCard extends HTMLElement {
     input.type = "text";
     input.placeholder = "Add an item…";
     input.setAttribute("aria-label", "Add an item");
+    stopKeyboardPropagation(input);
     const add = document.createElement("button");
     setText(add, "Add");
     const submit = () => {

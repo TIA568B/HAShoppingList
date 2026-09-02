@@ -165,6 +165,16 @@ function setText(el, value) {
   el.textContent = value == null ? "" : String(value);
 }
 
+// Prevent keystrokes typed into a form field from bubbling out of the card and triggering
+// Home Assistant's global keyboard shortcuts (e.g. "c" quick-bar, "e", "a"). HA listens for
+// these on document; without this, typing a category/shop name fires shortcuts and the
+// field is unusable. We stop propagation but do NOT preventDefault, so normal typing works.
+function stopKeyboardPropagation(el) {
+  for (const type of ["keydown", "keyup", "keypress"]) {
+    el.addEventListener(type, (e) => e.stopPropagation());
+  }
+}
+
 // Settings panels for the card: live editors for categories and shops (Option A,
 // docs/plans/feature-map-management/02). Pure DOM builder — no direct HA access; the card
 // injects async action callbacks (which call the existing integration services) and an
@@ -200,6 +210,7 @@ function labelledInput(labelText, value, placeholder) {
   input.value = value == null ? "" : String(value);
   if (placeholder) input.placeholder = placeholder;
   input.setAttribute("aria-label", labelText);
+  stopKeyboardPropagation(input);
   wrap.append(span, input);
   return { wrap, input };
 }
@@ -819,6 +830,7 @@ class AlexaShoppingCategoriserCard extends HTMLElement {
     input.type = "text";
     input.placeholder = "Add an item…";
     input.setAttribute("aria-label", "Add an item");
+    stopKeyboardPropagation(input);
     const add = document.createElement("button");
     setText(add, "Add");
     const submit = () => {

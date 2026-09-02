@@ -10,7 +10,21 @@
 //
 // The card element is registered by the sibling card module; import it so the panel works
 // even when the card resource has not been loaded by a dashboard yet.
-import "./alexa-shopping-categoriser-card.js";
+//
+// Cache-busting: this panel module's own URL carries the integration version query
+// (?v=x.y.z). We propagate that same query onto the card import so a card update is never
+// masked by the browser caching a bare "./card.js" (the panel URL busts, but a query-less
+// relative import would not). Uses a dynamic import so we can derive the URL at runtime
+// from import.meta.url.
+(() => {
+  const cardUrl = new URL("./alexa-shopping-categoriser-card.js", import.meta.url);
+  const version = new URL(import.meta.url).searchParams.get("v");
+  if (version) cardUrl.searchParams.set("v", version);
+  import(cardUrl.href).catch((err) => {
+    // eslint-disable-next-line no-console
+    console.error("alexa-shopping-categoriser-panel: failed to load card module", err);
+  });
+})();
 
 const CARD_TAG = "alexa-shopping-categoriser-card";
 const PANEL_TAG = "alexa-shopping-categoriser-panel";

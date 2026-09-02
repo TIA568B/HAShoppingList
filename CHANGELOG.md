@@ -6,6 +6,19 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-09-02
+
+### Fixed
+- **Typing in the settings panel no longer triggers Home Assistant keyboard shortcuts.**
+  Keystrokes in the card's text fields (settings name/keyword inputs and the add-item box)
+  were bubbling to HA's global hotkey handler (e.g. "c" opening the quick-bar), making the
+  fields unusable. The card now stops keyboard-event propagation on its inputs (without
+  preventing default, so typing works normally).
+- **Sidebar panel now always loads the matching card version.** The panel imported the card
+  with a non-cache-busted relative path, so a browser could keep serving an old card after an
+  update (symptom: empty/0-count categories still shown because the stale card lacked the
+  empty-hide logic). The panel now propagates its own version query onto the card import.
+
 ## [0.4.0] - 2026-09-02
 
 ### Added
