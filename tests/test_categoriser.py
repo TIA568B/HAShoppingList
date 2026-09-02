@@ -137,6 +137,15 @@ def test_shop_name_in_text_beats_keyword_rule() -> None:
     assert resolve_shop(normalize("tesco nappies"), SHOPS, {}) == "Tesco"
 
 
+def test_shop_name_with_punctuation_matches_in_text() -> None:
+    # Shop names carrying punctuation the normalizer strips must still match by name-in-text:
+    # the resolver normalizes the shop name the same way as the item text. "Marks & Spencer"
+    # -> "marks spencer"; "Co-op" keeps its intra-word hyphen.
+    assert resolve_shop(normalize("marks & spencer trifle"), SHOPS, {}) == "Marks & Spencer"
+    assert resolve_shop(normalize("co-op sausages"), SHOPS, {}) == "Co-op"
+    assert resolve_shop(normalize("home bargains bleach"), SHOPS, {}) == "Home Bargains"
+
+
 def test_shop_name_in_text_beats_learned_override() -> None:
     overrides = {"tesco nappies": "Aldi"}
     assert resolve_shop(normalize("tesco nappies"), SHOPS, overrides) == "Tesco"

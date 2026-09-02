@@ -155,9 +155,12 @@ def resolve_shop(
     shop_names = {s.name for s in shops}
     tokens = _tokens(normalized)
 
-    # 1. Explicit shop name in the item text (whole word, case-insensitive).
+    # 1. Explicit shop name in the item text (whole word, case-insensitive). Match against a
+    # *normalized* form of the shop name so punctuation the normalizer strips does not break
+    # the comparison (e.g. "Marks & Spencer" -> "marks spencer", "M&S" -> "m s"). Without this,
+    # an ampersand token from a naive split would never match the stripped item tokens.
     for shop in shops:
-        if _phrase_matches(tokens, shop.name):
+        if _phrase_matches(tokens, normalize(shop.name)):
             return shop.name
 
     # 2. Learned override, if the target shop still exists (self-heal otherwise).

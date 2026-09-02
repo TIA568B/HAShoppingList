@@ -6,6 +6,26 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-09-02
+
+### Added
+- **Three more default shops:** **Co-op**, **Marks & Spencer**, and **Home Bargains** (joining
+  Aldi, Asda, Tesco, Waitrose, Morrisons, Lidl, Sainsburys). They ship with no keyword rules, so
+  they are selectable and match by shop-name-in-text but do not force-assign ordinary items.
+
+### Fixed
+- **Shop names containing punctuation now match by name-in-text.** The shop resolver compared the
+  raw shop name against normalized item text, so a name like "Marks & Spencer" (whose `&` the
+  normalizer strips) could never match "marks & spencer …". The resolver now normalizes the shop
+  name the same way as item text before matching. "Co-op" and "Home Bargains" already worked
+  (hyphen preserved / no punctuation); this fixes ampersand and other stripped-punctuation names.
+
+### Notes
+- Seed-only change (plus the pure-resolver fix): no store schema or sensor attribute contract
+  change. Existing installs keep their stored shops and learned corrections; use **Reload
+  defaults** (Options flow) to adopt the new default shops. "Sainsbury's" is stored as
+  `Sainsburys` (no apostrophe) and is unchanged.
+
 ## [0.6.2] - 2026-09-02
 
 ### Changed

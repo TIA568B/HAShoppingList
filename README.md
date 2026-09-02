@@ -170,8 +170,9 @@ release without code changes (see **Editing your taxonomy** below).
 ## Shop preference
 
 Each item resolves to exactly one shop, or the always-present **No Preference** default.
-Default shops are **Aldi, Asda, Tesco, Waitrose, Morrisons, Lidl, Sainsburys** with starter
-keyword rules (e.g. `nappies`/`milk`/`teriyaki` → Aldi, clothing → Asda, `pizza` → Waitrose).
+Default shops are **Aldi, Asda, Tesco, Waitrose, Morrisons, Lidl, Sainsburys, Co-op,
+Marks & Spencer, Home Bargains** with starter keyword rules (e.g. `nappies`/`milk`/`teriyaki`
+→ Aldi, clothing → Asda, `pizza` → Waitrose).
 Resolution precedence, highest to lowest:
 
 1. **Shop name in the item text** (e.g. "tesco nappies" → Tesco) — beats everything.

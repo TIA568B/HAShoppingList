@@ -42,7 +42,18 @@ def test_loads_expected_taxonomy() -> None:
 
 def test_loads_expected_shops() -> None:
     shop_names = [s.name for s in default_shops()]
-    assert shop_names == ["Aldi", "Asda", "Tesco", "Waitrose", "Morrisons", "Lidl", "Sainsburys"]
+    assert shop_names == [
+        "Aldi",
+        "Asda",
+        "Tesco",
+        "Waitrose",
+        "Morrisons",
+        "Lidl",
+        "Sainsburys",
+        "Co-op",
+        "Marks & Spencer",
+        "Home Bargains",
+    ]
     aldi = next(s for s in default_shops() if s.name == "Aldi")
     assert "teriyaki" in aldi.keywords and "veggie pasta" in aldi.keywords
     waitrose = next(s for s in default_shops() if s.name == "Waitrose")

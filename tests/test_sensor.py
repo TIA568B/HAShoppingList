@@ -57,7 +57,18 @@ async def test_sensor_attribute_contract(
     cat_names = [c["name"] for c in attrs["category_definitions"]]
     assert "Milk" in cat_names and "Fake Meat" in cat_names
     shop_names = [s["name"] for s in attrs["shop_definitions"]]
-    assert shop_names == ["Aldi", "Asda", "Tesco", "Waitrose", "Morrisons", "Lidl", "Sainsburys"]
+    assert shop_names == [
+        "Aldi",
+        "Asda",
+        "Tesco",
+        "Waitrose",
+        "Morrisons",
+        "Lidl",
+        "Sainsburys",
+        "Co-op",
+        "Marks & Spencer",
+        "Home Bargains",
+    ]
     assert "No Preference" not in shop_names  # implicit
 
     # shop_groups: shop-primary then category, with the documented item shape.

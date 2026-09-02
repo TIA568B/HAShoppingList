@@ -325,6 +325,9 @@
     { "name": "Waitrose", "keywords": ["pizza"] },
     { "name": "Morrisons", "keywords": [] },
     { "name": "Lidl", "keywords": [] },
-    { "name": "Sainsburys", "keywords": [] }
+    { "name": "Sainsburys", "keywords": [] },
+    { "name": "Co-op", "keywords": [] },
+    { "name": "Marks & Spencer", "keywords": [] },
+    { "name": "Home Bargains", "keywords": [] }
   ]
 }

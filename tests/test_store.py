@@ -19,7 +19,18 @@ async def test_load_seeds_defaults(hass: HomeAssistant) -> None:
     assert any(c.name == "Milk" for c in category_map.categories)
     assert any(c.name == "Fake Meat" for c in category_map.categories)
     shop_names = {s.name for s in category_map.shops}
-    assert shop_names == {"Aldi", "Asda", "Tesco", "Waitrose", "Morrisons", "Lidl", "Sainsburys"}
+    assert shop_names == {
+        "Aldi",
+        "Asda",
+        "Tesco",
+        "Waitrose",
+        "Morrisons",
+        "Lidl",
+        "Sainsburys",
+        "Co-op",
+        "Marks & Spencer",
+        "Home Bargains",
+    }
     assert NO_PREFERENCE not in shop_names  # implicit, not stored
     assert category_map.overrides == {}
     assert category_map.shop_overrides == {}
@@ -56,6 +67,9 @@ async def test_v1_store_reseeds_categories_and_shops_but_keeps_overrides(
         "Morrisons",
         "Lidl",
         "Sainsburys",
+        "Co-op",
+        "Marks & Spencer",
+        "Home Bargains",
     }
     # Learned overrides preserved verbatim.
     assert category_map.overrides == {"birthday candles": "Household"}
