@@ -6,7 +6,25 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
-## [0.6.1] - 2026-09-02
+## [0.6.2] - 2026-09-02
+
+### Changed
+- **Moved baking sweeteners from Pantry to Baking:** `golden syrup`, `maple syrup`, `treacle`,
+  and `black treacle` now categorise as **Baking** rather than Pantry. (The Baking category and
+  most baking staples — flours, sugars, `bicarbonate of soda`, `baking powder`, `cocoa powder`,
+  `chocolate chips`, etc. — already shipped in 0.6.0.)
+
+### Fixed
+- **`chocolate chips` now correctly resolves to Baking** (and `tortilla chips` to Snacks).
+  Frozen's over-broad bare `chips` keyword was matching first (Frozen is evaluated first) and
+  hijacking any "… chips" item, so Baking's `chocolate chips` keyword never won. Frozen now uses
+  `oven chips` (alongside the existing `frozen chips`) instead of bare `chips`. Plain "chips"
+  with no qualifier is now Uncategorised rather than silently Frozen.
+
+### Notes
+- Seed-only change: no store schema or sensor attribute contract change. Existing installs keep
+  their stored map and learned corrections; use **Reload defaults** (Options flow) to adopt the
+  updated taxonomy.
 
 ### Fixed
 - **Card version footer is now dynamic, not hard-coded.** It previously showed a fixed

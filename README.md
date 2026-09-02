@@ -132,7 +132,7 @@ Health & Beauty, Medicine, Pets** (plus the implicit **Uncategorised** bucket). 
 
 | Item text matches… | Category | Assumption |
 | --- | --- | --- |
-| frozen items (`frozen …`, `ice cream`, `sorbet`, `chips`, `pizza`) | **Frozen** | — |
+| frozen items (`frozen …`, `ice cream`, `sorbet`, `oven chips`, `pizza`) | **Frozen** | — |
 | sauces/condiments (`sauce`, `ketchup`, `mayo`, `chutney`, `mustard`, `pesto`, `jam`, `vinegar`) | **Sauces** | — |
 | drinks (`juice`, `squash`, `tea`, `coffee`, soft drinks, `wine`, `lager`, …) | **Drinks** | — |
 | produce (`apple`, `carrot`, `cucumber`, `garlic`, `aubergine`, `kale`, …) | **Fruit & Veg** | — |
@@ -144,7 +144,7 @@ Health & Beauty, Medicine, Pets** (plus the implicit **Uncategorised** bucket). 
 | dry goods (`pasta`, `rice`, `lentils`, `beans`, `tinned`, `oil`, `stock cube`) | **Pantry** | — |
 | cleaning/laundry/consumables (`toilet roll`, `bleach`, `bin bags`, `batteries`) | **Household** | — |
 | herbs, spices, salt (`basil`, `paprika`, `cumin`, `sea salt`) | **Herbs & Spices** | — |
-| baking goods (`flour`, `sugar`, `baking powder`, `cocoa powder`, `chocolate chips`) | **Baking** | — |
+| baking goods (`flour`, `sugar`, `baking powder`, `cocoa powder`, `chocolate chips`, syrups/`treacle`) | **Baking** | — |
 | breakfast cereal + seeds (`cornflakes`, `porridge oats`, `granola`, `chia seeds`) | **Cereals** | — |
 | snacks/biscuits/sweets/nuts (`crisps`, `chocolate`, `biscuits`, `almonds`, dried fruit) | **Snacks** | — |
 | toiletries (`shampoo`, `toothpaste`, `deodorant`, `razors`) | **Health & Beauty** | — |

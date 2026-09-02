@@ -4,7 +4,7 @@
     {
       "name": "Frozen",
       "keywords": [
-        "frozen peas", "vegan ice cream", "chips", "pizza",
+        "frozen peas", "vegan ice cream", "oven chips", "pizza",
         "frozen sweetcorn", "frozen mixed vegetables", "frozen chips",
         "frozen roast potatoes", "frozen mash", "frozen spinach", "frozen berries",
         "frozen mixed berries", "frozen sliced bread", "frozen pastry",
@@ -181,8 +181,7 @@
         "couscous", "bulgur wheat", "pearl barley", "polenta", "hoisin",
         "oyster sauce", "worcestershire", "brown sauce", "hp sauce",
         "horseradish", "mint sauce", "cranberry sauce", "apple sauce",
-        "bread sauce", "black olives", "green olives", "golden syrup",
-        "maple syrup", "treacle", "black treacle", "rapeseed oil", "sunflower oil",
+        "bread sauce", "black olives", "green olives", "rapeseed oil", "sunflower oil",
         "vegetable oil", "olive oil", "extra virgin olive oil", "groundnut oil",
         "sesame oil", "coconut oil", "stock cube", "chicken stock cube",
         "beef stock cube", "vegetable stock cube", "bouillon", "gravy granules",
@@ -241,7 +240,8 @@
         "marzipan", "fondant icing", "edible glitter", "cake sprinkles",
         "hundreds and thousands", "food colouring", "piping bags",
         "cupcake cases", "vanilla essence", "almond essence", "peppermint essence",
-        "rose water", "orange blossom water", "chocolate chips"
+        "rose water", "orange blossom water", "chocolate chips",
+        "golden syrup", "maple syrup", "treacle", "black treacle"
       ]
     },
     {
