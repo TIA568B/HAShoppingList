@@ -110,7 +110,9 @@ class AlexaShoppingConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             source_entity_id = user_input[CONF_SOURCE_ENTITY_ID]
             await self.async_set_unique_id(source_entity_id)
-            self._abort_if_unique_id_mismatch(reason="already_configured")
+            # Abort only if a *different* entry already uses this source; the current
+            # reconfigure entry is ignored by _abort_if_unique_id_configured.
+            self._abort_if_unique_id_configured()
             return self.async_update_reload_and_abort(
                 entry,
                 unique_id=source_entity_id,

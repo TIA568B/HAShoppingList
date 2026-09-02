@@ -50,3 +50,16 @@ Thumbs.db
 *.mov
 *.wmv
 
+
+# Python virtual env & tooling caches
+.venv/
+__pycache__/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Coverage artifacts
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml

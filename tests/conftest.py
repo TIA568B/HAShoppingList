@@ -24,6 +24,20 @@ def auto_enable_custom_integrations(
 
 
 @pytest.fixture
+def source_list() -> Generator[object]:
+    """Provide a patched source todo list (get_items/update_item/add_item).
+
+    Default items: one unchecked 'oat milk'. Mutate ``.items`` in the test to change what
+    get_items returns; read ``.recorded`` for write-call assertions.
+    """
+    from tests.helpers import SourceListMock, make_items
+
+    mock = SourceListMock(make_items(("u1", "oat milk", False)))
+    with mock:
+        yield mock
+
+
+@pytest.fixture
 def mock_config_entry() -> MockConfigEntry:
     """Return a mock config entry for the integration."""
     return MockConfigEntry(

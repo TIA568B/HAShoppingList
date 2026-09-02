@@ -5,9 +5,9 @@
   "codeowners": ["@davidcarson"],
   "config_flow": true,
   "dependencies": ["todo"],
-  "documentation": "https://github.com/davidcarson/alexa_shopping_categoriser",
+  "documentation": "https://bitbucket.org/tia568b/hashoppinglist/",
   "iot_class": "calculated",
   "integration_type": "service",
-  "issue_tracker": "https://github.com/davidcarson/alexa_shopping_categoriser/issues",
+  "issue_tracker": "https://bitbucket.org/tia568b/hashoppinglist/issues",
   "requirements": []
 }

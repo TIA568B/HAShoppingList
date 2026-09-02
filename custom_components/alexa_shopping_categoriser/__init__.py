@@ -13,9 +13,11 @@ import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.loader import async_get_integration
 
 from .const import CONF_SOURCE_ENTITY_ID, CONFIG_ENTRY_VERSION, DOMAIN
 from .coordinator import AlexaShoppingCoordinator
+from .frontend import async_register_card
 from .runtime import AlexaShoppingRuntimeData
 from .services import async_register_services, async_unregister_services
 from .store import CategoryStore
@@ -46,6 +48,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: AlexaShoppingConfigEntry
     )
 
     async_register_services(hass)
+
+    # Serve the bundled card (best-effort; never blocks setup).
+    integration = await async_get_integration(hass, DOMAIN)
+    await async_register_card(hass, integration.version or "0")
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 

@@ -224,6 +224,11 @@ async def _handle_recategorise_item(hass: HomeAssistant, call: ServiceCall) -> N
         category_map.overrides.pop(key, None)
     else:
         category_map.overrides[key] = category
+    # `apply_to_uid` is accepted for API-contract compatibility. It is intentionally a
+    # no-op beyond the recompute below: the coordinator rebuilds the whole projection from
+    # the source list + maps on every change, so the matching item (by uid or by any other
+    # item sharing the normalized text) already moves immediately. There is no per-uid
+    # mutation to perform because the projection is fully derived (NFR3).
     await _persist_and_recompute(coordinator, category_map)
 
 

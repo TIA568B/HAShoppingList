@@ -35,6 +35,7 @@ from .const import (
 )
 from .models import SourceItem
 from .projection import Projection, build_projection
+from .repairs import async_clear_source_missing, async_raise_source_missing
 
 if TYPE_CHECKING:
     from .store import CategoryStore
@@ -61,6 +62,7 @@ class AlexaShoppingCoordinator(DataUpdateCoordinator[Projection]):
             hass,
             _LOGGER,
             name=DOMAIN,
+            config_entry=entry,
             update_interval=timedelta(minutes=SAFETY_POLL_MINUTES),
             request_refresh_debouncer=Debouncer(
                 hass,
@@ -87,6 +89,7 @@ class AlexaShoppingCoordinator(DataUpdateCoordinator[Projection]):
         source_state = self.hass.states.get(self.source_entity_id)
 
         if source_state is None or source_state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+            async_raise_source_missing(self.hass, self.entry.entry_id, self.source_entity_id)
             # At first refresh this becomes ConfigEntryNotReady (see below); at runtime
             # it is a transient failure.
             if self.data is None:
@@ -101,6 +104,9 @@ class AlexaShoppingCoordinator(DataUpdateCoordinator[Projection]):
             raise
         except Exception as err:
             raise UpdateFailed(f"Error reading {self.source_entity_id}: {err}") from err
+
+        # Source is healthy: clear any prior repair issue.
+        async_clear_source_missing(self.hass, self.entry.entry_id)
 
         options = self.entry.options
         grace = int(options.get(CONF_GRACE_PERIOD_SECONDS, DEFAULT_GRACE_PERIOD_SECONDS))
