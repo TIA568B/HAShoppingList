@@ -8,7 +8,8 @@ is the source entity id.
 
 from __future__ import annotations
 
-from typing import Any
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.config_entries import (
     ConfigEntry,
@@ -21,6 +22,7 @@ from homeassistant.helpers import entity_registry as er
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 
+from . import map_ops
 from .const import (
     ALEXA_DEVICES_PLATFORM,
     CONF_COLLAPSE_EMPTY_CATEGORIES,
@@ -38,6 +40,11 @@ from .const import (
     GRACE_PERIOD_MIN,
     TODO_DOMAIN,
 )
+from .map_ops import MapValidationError
+
+if TYPE_CHECKING:
+    from .coordinator import AlexaShoppingCoordinator
+    from .models import CategoryMap
 
 
 def _todo_entities_by_platform(hass: Any) -> list[tuple[str, str]]:
@@ -135,11 +142,57 @@ class AlexaShoppingConfigFlow(ConfigFlow, domain=DOMAIN):
         return AlexaShoppingOptionsFlow()
 
 
+_ADD_NEW = "__add_new__"
+
+
 class AlexaShoppingOptionsFlow(OptionsFlow):
-    """Handle the options flow (display tuning only; not the source entity)."""
+    """Menu-style options flow: display tuning + native taxonomy management.
+
+    Category/shop edits are applied through the shared ``map_ops`` (the same code path the
+    services use) against the integration's store, then the coordinator recomputes — so the
+    view updates live. Taxonomy edits do **not** go through ``entry.options``.
+    """
+
+    def __init__(self) -> None:
+        """Initialise transient per-flow state."""
+        self._selected: str | None = None
+
+    # --- helpers ----------------------------------------------------------
+
+    def _coordinator(self) -> AlexaShoppingCoordinator | None:
+        runtime = getattr(self.config_entry, "runtime_data", None)
+        return runtime.coordinator if runtime is not None else None
+
+    async def _apply(self, mutate: Callable[[CategoryMap], None]) -> None:
+        """Run a map_ops mutation against the store, persist, and recompute."""
+        coordinator = self._coordinator()
+        if coordinator is None:
+            raise MapValidationError("Integration is not loaded; try again after setup")
+        category_map = coordinator.store.category_map
+        mutate(category_map)
+        await coordinator.store.async_replace(category_map)
+        await coordinator.async_recompute()
+
+    # --- menu -------------------------------------------------------------
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        """Manage the options."""
+        """Top-level menu."""
+        return self.async_show_menu(
+            step_id="init",
+            menu_options=[
+                "display_options",
+                "manage_categories",
+                "manage_shops",
+                "reload_defaults",
+            ],
+        )
+
+    # --- display options (the original form) ------------------------------
+
+    async def async_step_display_options(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Tune display options (grace window, toggles). Persists to entry.options."""
         if user_input is not None:
             return self.async_create_entry(data=user_input)
 
@@ -172,4 +225,193 @@ class AlexaShoppingOptionsFlow(OptionsFlow):
                 ): cv.boolean,
             }
         )
-        return self.async_show_form(step_id="init", data_schema=schema)
+        return self.async_show_form(step_id="display_options", data_schema=schema)
+
+    # --- categories -------------------------------------------------------
+
+    async def async_step_manage_categories(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Pick a category to edit, or add a new one."""
+        coordinator = self._coordinator()
+        if coordinator is None:
+            return self.async_abort(reason="not_loaded")
+
+        if user_input is not None:
+            self._selected = user_input["selection"]
+            return await self.async_step_edit_category()
+
+        names = [c.name for c in coordinator.store.category_map.categories]
+        choices = {name: name for name in names}
+        choices[_ADD_NEW] = "(Add new category)"
+        schema = vol.Schema({vol.Required("selection"): vol.In(choices)})
+        return self.async_show_form(step_id="manage_categories", data_schema=schema)
+
+    async def async_step_edit_category(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Add / rename / edit-keywords / delete a single category."""
+        coordinator = self._coordinator()
+        if coordinator is None:
+            return self.async_abort(reason="not_loaded")
+        adding = self._selected == _ADD_NEW
+        current = None if adding else self._selected
+
+        if user_input is not None:
+            name = user_input.get("name", "").strip()
+            keywords = _split_keywords(user_input.get("keywords", ""))
+            delete = user_input.get("delete", False)
+            existing = current or ""
+            try:
+                if adding:
+                    await self._apply(lambda m: map_ops.add_category(m, name, keywords))
+                elif delete:
+                    await self._apply(lambda m: map_ops.delete_category(m, existing))
+                else:
+                    await self._apply(
+                        lambda m: map_ops.edit_category(
+                            m, existing, new_name=name, keywords=keywords
+                        )
+                    )
+            except MapValidationError as err:
+                return self.async_show_form(
+                    step_id="edit_category",
+                    data_schema=self._category_schema(current, coordinator),
+                    errors={"base": "invalid"},
+                    description_placeholders={"error": str(err)},
+                )
+            return await self.async_step_init()
+
+        return self.async_show_form(
+            step_id="edit_category",
+            data_schema=self._category_schema(current, coordinator),
+        )
+
+    def _category_schema(
+        self, current: str | None, coordinator: AlexaShoppingCoordinator
+    ) -> vol.Schema:
+        keywords = ""
+        name = ""
+        if current is not None:
+            cat = next(
+                (c for c in coordinator.store.category_map.categories if c.name == current),
+                None,
+            )
+            if cat is not None:
+                name = cat.name
+                keywords = ", ".join(cat.keywords)
+        fields: dict[Any, Any] = {
+            vol.Required("name", default=name): cv.string,
+            vol.Optional("keywords", default=keywords): cv.string,
+        }
+        if current is not None:
+            fields[vol.Optional("delete", default=False)] = cv.boolean
+        return vol.Schema(fields)
+
+    # --- shops ------------------------------------------------------------
+
+    async def async_step_manage_shops(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Pick a shop to edit, or add a new one."""
+        coordinator = self._coordinator()
+        if coordinator is None:
+            return self.async_abort(reason="not_loaded")
+
+        if user_input is not None:
+            self._selected = user_input["selection"]
+            return await self.async_step_edit_shop()
+
+        names = [s.name for s in coordinator.store.category_map.shops]
+        choices = {name: name for name in names}
+        choices[_ADD_NEW] = "(Add new shop)"
+        schema = vol.Schema({vol.Required("selection"): vol.In(choices)})
+        return self.async_show_form(step_id="manage_shops", data_schema=schema)
+
+    async def async_step_edit_shop(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Add / rename / edit-keyword-rules / delete a single shop."""
+        coordinator = self._coordinator()
+        if coordinator is None:
+            return self.async_abort(reason="not_loaded")
+        adding = self._selected == _ADD_NEW
+        current = None if adding else self._selected
+
+        if user_input is not None:
+            name = user_input.get("name", "").strip()
+            keywords = _split_keywords(user_input.get("keywords", ""))
+            delete = user_input.get("delete", False)
+            existing = current or ""
+            try:
+                if adding:
+                    await self._apply(lambda m: map_ops.add_shop(m, name, keywords))
+                elif delete:
+                    await self._apply(lambda m: map_ops.delete_shop(m, existing))
+                else:
+                    await self._apply(
+                        lambda m: map_ops.edit_shop(m, existing, new_name=name, keywords=keywords)
+                    )
+            except MapValidationError as err:
+                return self.async_show_form(
+                    step_id="edit_shop",
+                    data_schema=self._shop_schema(current, coordinator),
+                    errors={"base": "invalid"},
+                    description_placeholders={"error": str(err)},
+                )
+            return await self.async_step_init()
+
+        return self.async_show_form(
+            step_id="edit_shop",
+            data_schema=self._shop_schema(current, coordinator),
+        )
+
+    def _shop_schema(
+        self, current: str | None, coordinator: AlexaShoppingCoordinator
+    ) -> vol.Schema:
+        keywords = ""
+        name = ""
+        if current is not None:
+            shop = next(
+                (s for s in coordinator.store.category_map.shops if s.name == current),
+                None,
+            )
+            if shop is not None:
+                name = shop.name
+                keywords = ", ".join(shop.keywords)
+        fields: dict[Any, Any] = {
+            vol.Required("name", default=name): cv.string,
+            vol.Optional("keywords", default=keywords): cv.string,
+        }
+        if current is not None:
+            fields[vol.Optional("delete", default=False)] = cv.boolean
+        return vol.Schema(fields)
+
+    # --- reload defaults --------------------------------------------------
+
+    async def async_step_reload_defaults(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Confirm, then replace categories/shops from the shipped defaults (keep learning)."""
+        coordinator = self._coordinator()
+        if coordinator is None:
+            return self.async_abort(reason="not_loaded")
+
+        if user_input is not None:
+            if user_input.get("confirm"):
+                await coordinator.store.async_reload_defaults()
+                await coordinator.async_recompute()
+            return await self.async_step_init()
+
+        schema = vol.Schema({vol.Required("confirm", default=False): cv.boolean})
+        return self.async_show_form(step_id="reload_defaults", data_schema=schema)
+
+
+def _split_keywords(raw: str) -> list[str]:
+    """Split a comma/newline-separated keyword string into a list."""
+    parts: list[str] = []
+    for chunk in raw.replace("\n", ",").split(","):
+        stripped = chunk.strip()
+        if stripped:
+            parts.append(stripped)
+    return parts

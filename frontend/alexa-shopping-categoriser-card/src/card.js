@@ -6,11 +6,14 @@
 import { AddReconciler } from "./add-reconciler.js";
 import { CollapseState } from "./collapse-state.js";
 import { setText, stopKeyboardPropagation } from "./escape.js";
-import { renderSettings } from "./settings-panel.js";
 import { ItemState, TickController } from "./tick-controller.js";
 
 const SUPPORTED_ATTRIBUTES_VERSION = 3;
 const INTEGRATION_DOMAIN = "alexa_shopping_categoriser";
+
+// Card build version — kept in step with manifest.json. Shown in a small footer so a
+// deployed/cached-stale card is obvious at a glance (deploy verification).
+export const CARD_VERSION = "0.5.0";
 
 export class AlexaShoppingCategoriserCard extends HTMLElement {
   constructor() {
@@ -22,8 +25,7 @@ export class AlexaShoppingCategoriserCard extends HTMLElement {
     this._adds = new AddReconciler();
     this._errors = [];
     this._reviewBannerDismissed = false;
-    this._settingsOpen = false;
-    this._confirmingReload = false;
+    this._editingUid = null; // uid whose per-item edit menu is open (card-local)
     this._tick = new TickController({
       updateItem: (uid, status) => this._updateItem(uid, status),
       onError: (e) => this._pushError(e),
@@ -177,6 +179,7 @@ export class AlexaShoppingCategoriserCard extends HTMLElement {
     }
 
     const attrs = state.attributes || {};
+    this._attrs = attrs; // cached for per-item edit menu (shop/category options)
     const version = attrs.attributes_version;
     if (typeof version === "number" && version > SUPPORTED_ATTRIBUTES_VERSION) {
       container.appendChild(
@@ -211,99 +214,10 @@ export class AlexaShoppingCategoriserCard extends HTMLElement {
       container.appendChild(this._msg("Your shopping list is empty."));
     }
 
-    container.appendChild(this._renderSettings(attrs));
-  }
-
-  _renderSettings(attrs) {
-    return renderSettings({
-      categoryDefs: attrs.category_definitions || [],
-      shopDefs: attrs.shop_definitions || [],
-      open: this._settingsOpen,
-      onToggle: () => {
-        this._settingsOpen = !this._settingsOpen;
-        this._render();
-      },
-      category: {
-        onAdd: async ({ name, keywords }) => {
-          if (await this._callIntegration("add_category", { name, keywords }, `add category "${name}"`))
-            this._render();
-        },
-        onSave: async ({ originalName, newName, keywords }) => {
-          const data = { name: originalName, keywords };
-          if (newName && newName !== originalName) data.new_name = newName;
-          if (await this._callIntegration("edit_category", data, `save category "${originalName}"`))
-            this._render();
-        },
-        onDelete: async ({ name }) => {
-          if (await this._callIntegration("delete_category", { name }, `delete category "${name}"`))
-            this._render();
-        },
-      },
-      shop: {
-        onAdd: async ({ name, keywords }) => {
-          if (await this._callIntegration("add_shop", { name, keywords }, `add shop "${name}"`))
-            this._render();
-        },
-        onSave: async ({ originalName, newName, keywords }) => {
-          const data = { name: originalName, keywords };
-          if (newName && newName !== originalName) data.new_name = newName;
-          if (await this._callIntegration("edit_shop", data, `save shop "${originalName}"`))
-            this._render();
-        },
-        onDelete: async ({ name }) => {
-          if (await this._callIntegration("delete_shop", { name }, `delete shop "${name}"`))
-            this._render();
-        },
-      },
-      onReloadDefaults: () => this._buildReloadControl(),
-    });
-  }
-
-  // Two-step inline confirm for the destructive "reload defaults" action (no blocking
-  // window.confirm; keeps it testable and accessible).
-  _buildReloadControl() {
-    const wrap = document.createElement("div");
-    wrap.className = "asc-reload";
-
-    if (!this._confirmingReload) {
-      const btn = document.createElement("button");
-      btn.className = "asc-reload-btn";
-      setText(btn, "Reload defaults");
-      btn.setAttribute("aria-label", "Reload categories and shops from defaults");
-      btn.addEventListener("click", () => {
-        this._confirmingReload = true;
-        this._render();
-      });
-      wrap.appendChild(btn);
-      return wrap;
-    }
-
-    const warn = document.createElement("span");
-    warn.className = "asc-reload-warn";
-    setText(
-      warn,
-      "Replace your categories and shops with the shipped defaults? Your learned item corrections are kept.",
-    );
-    const confirm = document.createElement("button");
-    confirm.className = "asc-reload-confirm";
-    setText(confirm, "Confirm reload");
-    confirm.setAttribute("aria-label", "Confirm reload defaults");
-    confirm.addEventListener("click", async () => {
-      this._confirmingReload = false;
-      if (await this._callIntegration("reload_defaults", {}, "reload defaults")) {
-        this._render();
-      }
-    });
-    const cancel = document.createElement("button");
-    cancel.className = "asc-reload-cancel";
-    setText(cancel, "Cancel");
-    cancel.setAttribute("aria-label", "Cancel reload defaults");
-    cancel.addEventListener("click", () => {
-      this._confirmingReload = false;
-      this._render();
-    });
-    wrap.append(warn, confirm, cancel);
-    return wrap;
+    const footer = document.createElement("div");
+    footer.className = "asc-version";
+    setText(footer, `v${CARD_VERSION}`);
+    container.appendChild(footer);
   }
 
   _msg(text) {
@@ -486,7 +400,91 @@ export class AlexaShoppingCategoriserCard extends HTMLElement {
       li.appendChild(undo);
     }
 
+    // Pencil: opens a card-local edit menu (set shop / set category). Buttons only — no
+    // text inputs — so there is nothing that can leak keystrokes to HA hotkeys.
+    const pencil = document.createElement("button");
+    pencil.className = "asc-edit";
+    setText(pencil, "\u270e"); // pencil glyph
+    pencil.setAttribute("aria-label", `Edit ${item.name}`);
+    pencil.setAttribute("title", "Set shop / category");
+    pencil.addEventListener("click", () => {
+      this._editingUid = this._editingUid === item.uid ? null : item.uid;
+      this._render();
+    });
+    li.appendChild(pencil);
+
+    if (this._editingUid === item.uid) {
+      li.appendChild(this._renderEditMenu(item));
+    }
+
     return li;
+  }
+
+  _renderEditMenu(item) {
+    const attrs = this._attrs || {};
+    const menu = document.createElement("div");
+    menu.className = "asc-edit-menu";
+    menu.setAttribute("role", "menu");
+
+    const shopNames = [
+      ...(attrs.shop_definitions || []).map((s) => s.name),
+      "No Preference",
+    ];
+    const catNames = [
+      ...(attrs.category_definitions || []).map((c) => c.name),
+      "Uncategorised",
+    ];
+
+    menu.appendChild(
+      this._optionGroup("Shop", shopNames, item.shop, (shop) =>
+        this._setItemShop(item, shop),
+      ),
+    );
+    menu.appendChild(
+      this._optionGroup("Category", catNames, item.category, (category) =>
+        this._setItemCategory(item, category),
+      ),
+    );
+    return menu;
+  }
+
+  _optionGroup(title, names, current, onChoose) {
+    const group = document.createElement("div");
+    group.className = "asc-edit-group";
+    const heading = document.createElement("div");
+    heading.className = "asc-edit-heading";
+    setText(heading, title);
+    group.appendChild(heading);
+    for (const name of names) {
+      const btn = document.createElement("button");
+      btn.className = name === current ? "asc-edit-opt current" : "asc-edit-opt";
+      setText(btn, name);
+      btn.setAttribute("role", "menuitemradio");
+      btn.setAttribute("aria-checked", String(name === current));
+      btn.addEventListener("click", () => onChoose(name));
+      group.appendChild(btn);
+    }
+    return group;
+  }
+
+  async _setItemShop(item, shop) {
+    this._editingUid = null;
+    const ok = await this._callIntegration(
+      "assign_shop",
+      { item_text: item.name, shop, apply_to_uid: item.uid },
+      `set shop for "${item.name}"`,
+    );
+    if (ok) this._render();
+  }
+
+  async _setItemCategory(item, category) {
+    this._editingUid = null;
+    const ok = await this._callIntegration(
+      "recategorise_item",
+      { item_text: item.name, category, apply_to_uid: item.uid },
+      `set category for "${item.name}"`,
+    );
+    if (ok) this._render();
   }
 
   disconnectedCallback() {
@@ -512,21 +510,22 @@ const CARD_CSS = `
   .asc-cat-header { width: 100%; text-align: left; background: none; border: none; cursor: pointer;
     padding: 4px 0; color: var(--secondary-text-color); }
   .asc-items { list-style: none; margin: 0; padding: 0 0 0 10px; }
-  .asc-item { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+  .asc-item { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 3px 0; }
   .asc-name.checked { text-decoration: line-through; opacity: 0.6; }
   .asc-undo { margin-left: auto; }
-  .asc-settings { margin-top: 16px; border-top: 1px solid var(--divider-color, #444); padding-top: 8px; }
-  .asc-settings-toggle { background: none; border: none; cursor: pointer; font-weight: 600;
-    color: var(--primary-text-color); padding: 4px 0; }
-  .asc-settings-sub { margin: 8px 0 4px 6px; }
-  .asc-settings-sub h4 { margin: 8px 0 4px; }
-  .asc-def-row, .asc-def-add { display: flex; flex-wrap: wrap; gap: 6px; align-items: end;
-    padding: 4px 0; }
-  .asc-field { display: flex; flex-direction: column; font-size: 0.8em; gap: 2px; }
-  .asc-field input { padding: 4px; }
-  .asc-reload { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  .asc-reload-warn { font-size: 0.85em; color: var(--warning-color, #ffa600); }
-  .asc-reload-confirm { color: var(--error-color, #db4437); }
+  .asc-edit { margin-left: auto; background: none; border: none; cursor: pointer;
+    font-size: 1.1em; line-height: 1; padding: 4px; color: var(--secondary-text-color); }
+  .asc-undo + .asc-edit { margin-left: 0; }
+  .asc-edit-menu { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 16px;
+    padding: 8px 4px; margin: 4px 0; background: var(--secondary-background-color, #1c1c1c);
+    border-radius: 6px; }
+  .asc-edit-group { display: flex; flex-direction: column; gap: 2px; min-width: 120px; }
+  .asc-edit-heading { font-size: 0.75em; text-transform: uppercase; opacity: 0.7; }
+  .asc-edit-opt { text-align: left; background: none; border: none; cursor: pointer;
+    padding: 6px 8px; border-radius: 4px; color: var(--primary-text-color); }
+  .asc-edit-opt:hover { background: var(--primary-color, #03a9f4); color: white; }
+  .asc-edit-opt.current { font-weight: 700; }
+  .asc-version { margin-top: 10px; text-align: right; font-size: 0.7em; opacity: 0.5; }
   button:focus-visible { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: 2px; }
 `;
 

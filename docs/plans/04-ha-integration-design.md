@@ -56,17 +56,25 @@ set. No user-facing string is hard-coded in flow logic. (Finding L-8 / S-09.)
 
 ## Options flow
 
-- `grace_period_seconds` (int, **8–30**, default **9**). The 8s floor respects the spec's
-  8–10s target (Req 4.1); the widened ceiling is a harmless convenience. (Finding L-7.)
-- `show_completed` (bool, default false).
-- `collapse_empty_categories` (bool, default true).
-- `redact_items_in_diagnostics` (bool, default true).
-- Changing options triggers `async_reload_entry` (or a lighter listener that re-reads options
-  without a full reload where safe).
+The options flow is **menu-style** (`async_show_menu`) as of 0.5.0 (see
+`docs/plans/feature-map-management/07`): **Display options · Manage categories · Manage shops ·
+Reload defaults**.
 
-> Category/keyword editing is **not** in the options flow — it is done via services (see
-> below) and the card, because it is high-frequency, structured, and needs to apply
-> immediately (Req 6.2).
+- **Display options** (the form): `grace_period_seconds` (int, **8–30**, default **9**; the 8s
+  floor respects the spec's 8–10s target, Req 4.1 — L-7), `show_completed` (bool, default false),
+  `collapse_empty_categories` (bool, default true), `redact_items_in_diagnostics` (bool, default
+  true). Submitting this sub-form persists to `entry.options` and triggers `async_reload_entry`.
+- **Manage categories / Manage shops:** pick an existing entry (or "add new") → a native form
+  (name + comma/newline keywords + a delete toggle for existing). Applied through the shared
+  `map_ops` (the same code path the services use) against the store, then a coordinator
+  recompute — so edits reflect live **without** a full reload. Reordering is deferred (OQ-B).
+- **Reload defaults:** a confirm step → `store.async_reload_defaults()` + recompute.
+
+> Category/shop editing is available in **two** native surfaces: this Options flow (curation)
+> and the card's per-item **pencil menu** (set an item's shop/category, buttons only). The
+> earlier in-card inline settings form (0.4.0) was removed in 0.5.0 — it captured HA keyboard
+> shortcuts and was poor on mobile (see feature doc 07). The `*_category`/`*_shop` services
+> still exist for automations.
 
 > **Source-entity change is *not* an options-flow field.** Because `entry.unique_id` is the
 > source entity id (one entry per source), changing the source cannot be a mutable option. To

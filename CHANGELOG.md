@@ -6,6 +6,36 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-02
+
+### Changed
+- **Taxonomy management moved to a native Options flow** (Settings → Devices & Services →
+  the integration → Configure). A menu offers: Display options · Manage categories · Manage
+  shops · Reload defaults. Categories/shops are added/renamed/deleted and their keywords
+  edited using Home Assistant's native form widgets — mobile-friendly and immune to the
+  keyboard-shortcut problem. Replaces the in-card settings panel.
+- **Per-item pencil menu on the card:** each item has a small pencil that opens a
+  buttons-only menu to set its **shop** or **category** (calls `assign_shop` /
+  `recategorise_item`, which learn). The menu has **no text inputs**, so it cannot trigger HA
+  global keyboard shortcuts. Tapping an item still ticks it (unchanged).
+- **Reload defaults** moved into the Options flow (behind a confirm). The `reload_defaults`
+  service still exists for automations/Developer Tools.
+- Category/shop mutation + validation logic consolidated into a shared `map_ops` module used
+  by both the services and the Options flow (single source of truth).
+
+### Added
+- A small **version footer** on the card (e.g. `v0.5.0`) so a stale/cached card is obvious at
+  a glance — deploy verification.
+
+### Removed
+- The in-card settings panel (`settings-panel.js`) and its inline text-input editor, which was
+  unusable (HA hotkey capture) and poor on mobile.
+
+### Notes
+- No store schema change (still `schema_version` 2). Sensor attribute contract unchanged
+  (`attributes_version` 3). Fixes the 0.4.x reports: settings hotkey capture and clunky/mobile
+  editing. Empty (0-count) categories/shops remain hidden.
+
 ## [0.4.1] - 2026-09-02
 
 ### Fixed

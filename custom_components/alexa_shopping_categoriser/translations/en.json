@@ -25,6 +25,15 @@
   "options": {
     "step": {
       "init": {
+        "title": "Shopping list settings",
+        "menu_options": {
+          "display_options": "Display options",
+          "manage_categories": "Manage categories",
+          "manage_shops": "Manage shops",
+          "reload_defaults": "Reload defaults"
+        }
+      },
+      "display_options": {
         "title": "Display options",
         "data": {
           "grace_period_seconds": "Undo window (seconds)",
@@ -32,7 +41,38 @@
           "collapse_empty_categories": "Collapse categories with no remaining items",
           "redact_items_in_diagnostics": "Redact item text in diagnostics"
         }
+      },
+      "manage_categories": {
+        "title": "Manage categories",
+        "description": "Pick a category to edit or delete, or add a new one.",
+        "data": { "selection": "Category" }
+      },
+      "edit_category": {
+        "title": "Edit category",
+        "description": "Name and comma-separated keywords. Tick delete to remove it (its items move to Uncategorised).",
+        "data": { "name": "Name", "keywords": "Keywords", "delete": "Delete this category" }
+      },
+      "manage_shops": {
+        "title": "Manage shops",
+        "description": "Pick a shop to edit or delete, or add a new one.",
+        "data": { "selection": "Shop" }
+      },
+      "edit_shop": {
+        "title": "Edit shop",
+        "description": "Name and comma-separated keyword rules. Tick delete to remove it (its items move to No Preference).",
+        "data": { "name": "Name", "keywords": "Keyword rules", "delete": "Delete this shop" }
+      },
+      "reload_defaults": {
+        "title": "Reload defaults",
+        "description": "Replace your categories and shops with the shipped defaults. Your learned item corrections are kept. This overwrites any category/shop edits you have made.",
+        "data": { "confirm": "Yes, replace categories and shops with defaults" }
       }
+    },
+    "error": {
+      "invalid": "{error}"
+    },
+    "abort": {
+      "not_loaded": "The integration is still starting up. Try again in a moment."
     }
   },
   "services": {

@@ -89,9 +89,10 @@ test("item name is written as text, not HTML (XSS-safe)", () => {
   assert.ok(names.some((t) => t.includes("<img")));
 });
 
-// --- settings panel (M4) -------------------------------------------------
 
-function makeHassWithDefs(calls, { fail = false } = {}) {
+// --- per-item pencil edit menu (0.5.0) -----------------------------------
+
+function makeHassWithItem(calls, { fail = false } = {}) {
   return {
     states: {
       "sensor.test": {
@@ -99,114 +100,131 @@ function makeHassWithDefs(calls, { fail = false } = {}) {
         attributes: {
           attributes_version: 3,
           source_entity_id: "todo.src",
-          total_unchecked: 0,
+          total_unchecked: 1,
           uncategorised_count: 0,
-          options: { grace_period_seconds: 9, show_completed: false, collapse_empty_categories: true },
-          category_definitions: [{ name: "Milk", keywords: ["milk"] }],
-          shop_definitions: [{ name: "Aldi", keywords: ["nappies"] }],
-          shop_groups: [],
+          options: {
+            grace_period_seconds: 9,
+            show_completed: false,
+            collapse_empty_categories: true,
+          },
+          category_definitions: [
+            { name: "Milk", keywords: ["milk"] },
+            { name: "Sauces", keywords: ["sauce"] },
+          ],
+          shop_definitions: [
+            { name: "Aldi", keywords: [] },
+            { name: "Tesco", keywords: [] },
+          ],
+          shop_groups: [
+            {
+              name: "No Preference",
+              collapsed: false,
+              categories: [
+                {
+                  name: "Milk",
+                  collapsed: false,
+                  items: [
+                    {
+                      uid: "u1",
+                      name: "oat milk",
+                      checked: false,
+                      shop: "No Preference",
+                      category: "Milk",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
         },
       },
     },
     callService: async (domain, service, data) => {
       calls.push({ domain, service, data });
-      if (fail) {
-        const err = new Error("Category 'Milk' already exists");
-        throw err;
-      }
+      if (fail) throw new Error("Unknown shop");
     },
   };
 }
 
-test("settings panel is present and toggles open", () => {
-  const calls = [];
-  const card = mountCard(makeHassWithDefs(calls));
-  const toggle = card.shadowRoot.byClass("asc-settings-toggle")[0];
-  assert.ok(toggle, "settings toggle present");
-  assert.equal(card.shadowRoot.byClass("asc-settings-sub").length, 0); // closed by default
-  toggle.dispatch("click");
-  assert.equal(card.shadowRoot.byClass("asc-settings-sub").length, 2); // open: categories + shops
+function openEditMenu(card) {
+  const pencil = card.shadowRoot.byClass("asc-edit")[0];
+  pencil.dispatch("click");
+  return card.shadowRoot.byClass("asc-edit-menu")[0];
+}
+
+test("pencil opens an edit menu with shop + category option buttons and no text inputs", () => {
+  const card = mountCard(makeHassWithItem([]));
+  assert.equal(card.shadowRoot.byClass("asc-edit-menu").length, 0); // closed by default
+  const menu = openEditMenu(card);
+  assert.ok(menu, "edit menu opens on pencil click");
+  // No text inputs anywhere in the menu (hotkey-safe).
+  const inputs = menu.query((e) => e.tagName === "input");
+  assert.equal(inputs.length, 0);
+  // Shop options include the shops + No Preference; category options include cats + Uncategorised.
+  const opts = menu.byClass("asc-edit-opt").map((b) => b.text());
+  assert.ok(opts.includes("Aldi") && opts.includes("No Preference"));
+  assert.ok(opts.includes("Milk") && opts.includes("Uncategorised"));
 });
 
-test("adding a category calls add_category on the integration domain", async () => {
+test("choosing a shop calls assign_shop with item_text + apply_to_uid", async () => {
   const calls = [];
-  const card = mountCard(makeHassWithDefs(calls));
-  card.shadowRoot.byClass("asc-settings-toggle")[0].dispatch("click");
-  const addForm = card.shadowRoot.byClass("asc-def-add")[0]; // Categories add form
-  const inputs = addForm.query((e) => e.tagName === "input");
-  inputs[0].value = "Snacks";
-  inputs[1].value = "crisps";
-  addForm.byClass("asc-def-addbtn")[0].dispatch("click");
+  const card = mountCard(makeHassWithItem(calls));
+  const menu = openEditMenu(card);
+  const aldi = menu.byClass("asc-edit-opt").find((b) => b.text() === "Aldi");
+  aldi.dispatch("click");
   await Promise.resolve();
   await Promise.resolve();
   assert.deepEqual(calls, [
     {
       domain: "alexa_shopping_categoriser",
-      service: "add_category",
-      data: { name: "Snacks", keywords: ["crisps"] },
+      service: "assign_shop",
+      data: { item_text: "oat milk", shop: "Aldi", apply_to_uid: "u1" },
     },
   ]);
 });
 
-test("deleting a shop calls delete_shop", async () => {
+test("choosing a category calls recategorise_item with item_text + apply_to_uid", async () => {
   const calls = [];
-  const card = mountCard(makeHassWithDefs(calls));
-  card.shadowRoot.byClass("asc-settings-toggle")[0].dispatch("click");
-  const shopRow = card.shadowRoot.byClass("asc-def-row")[1]; // Aldi
-  shopRow.byClass("asc-def-delete")[0].dispatch("click");
+  const card = mountCard(makeHassWithItem(calls));
+  const menu = openEditMenu(card);
+  const sauces = menu.byClass("asc-edit-opt").find((b) => b.text() === "Sauces");
+  sauces.dispatch("click");
   await Promise.resolve();
   await Promise.resolve();
   assert.deepEqual(calls, [
-    { domain: "alexa_shopping_categoriser", service: "delete_shop", data: { name: "Aldi" } },
+    {
+      domain: "alexa_shopping_categoriser",
+      service: "recategorise_item",
+      data: { item_text: "oat milk", category: "Sauces", apply_to_uid: "u1" },
+    },
   ]);
 });
 
-test("a failing service surfaces a dismissible error naming the action", async () => {
-  const calls = [];
-  const card = mountCard(makeHassWithDefs(calls, { fail: true }));
-  card.shadowRoot.byClass("asc-settings-toggle")[0].dispatch("click");
-  const addForm = card.shadowRoot.byClass("asc-def-add")[0];
-  addForm.query((e) => e.tagName === "input")[0].value = "Milk";
-  addForm.byClass("asc-def-addbtn")[0].dispatch("click");
-  await Promise.resolve();
-  await Promise.resolve();
-  await Promise.resolve();
-  const errors = card.shadowRoot.byClass("asc-error").map((e) => e.text());
-  assert.ok(errors.some((t) => t.includes("add category") && t.includes("already exists")));
+test("pencil toggles the menu closed on second click", () => {
+  const card = mountCard(makeHassWithItem([]));
+  openEditMenu(card);
+  assert.equal(card.shadowRoot.byClass("asc-edit-menu").length, 1);
+  card.shadowRoot.byClass("asc-edit")[0].dispatch("click");
+  assert.equal(card.shadowRoot.byClass("asc-edit-menu").length, 0);
 });
 
-// --- reload defaults (M5) ------------------------------------------------
-
-test("reload defaults is a two-step confirm: button then confirm calls reload_defaults", async () => {
+test("ticking an item is unaffected by the pencil affordance", () => {
   const calls = [];
-  const card = mountCard(makeHassWithDefs(calls));
-  card.shadowRoot.byClass("asc-settings-toggle")[0].dispatch("click");
-
-  // Step 1: the plain button is shown, no confirm yet, no service call.
-  assert.equal(card.shadowRoot.byClass("asc-reload-btn").length, 1);
-  assert.equal(card.shadowRoot.byClass("asc-reload-confirm").length, 0);
-  card.shadowRoot.byClass("asc-reload-btn")[0].dispatch("click");
-
-  // Step 2: confirm/cancel shown; still no service call.
-  assert.equal(calls.length, 0);
-  assert.equal(card.shadowRoot.byClass("asc-reload-confirm").length, 1);
-  card.shadowRoot.byClass("asc-reload-confirm")[0].dispatch("click");
-  await Promise.resolve();
-  await Promise.resolve();
-
-  assert.deepEqual(calls, [
-    { domain: "alexa_shopping_categoriser", service: "reload_defaults", data: {} },
-  ]);
+  const card = mountCard(makeHassWithItem(calls));
+  const box = card.shadowRoot.query((e) => e.tagName === "input" && e.type === "checkbox")[0];
+  box.dispatch("change");
+  // complete-on-tap sends update_item(completed) immediately.
+  assert.ok(
+    calls.some((c) => c.service === "update_item" && c.data.status === "completed"),
+  );
 });
 
-test("cancelling the reload confirm does not call the service", () => {
-  const calls = [];
-  const card = mountCard(makeHassWithDefs(calls));
-  card.shadowRoot.byClass("asc-settings-toggle")[0].dispatch("click");
-  card.shadowRoot.byClass("asc-reload-btn")[0].dispatch("click");
-  card.shadowRoot.byClass("asc-reload-cancel")[0].dispatch("click");
-  assert.equal(calls.length, 0);
-  // Back to the plain button (confirm dismissed).
-  assert.equal(card.shadowRoot.byClass("asc-reload-btn").length, 1);
-  assert.equal(card.shadowRoot.byClass("asc-reload-confirm").length, 0);
+// --- version footer (deploy verification) --------------------------------
+
+test("card renders a version footer matching CARD_VERSION", async () => {
+  const { CARD_VERSION } = await import("../src/card.js");
+  const card = mountCard(makeHassWithItem([]));
+  const footer = card.shadowRoot.byClass("asc-version")[0];
+  assert.ok(footer, "version footer present");
+  assert.equal(footer.text(), `v${CARD_VERSION}`);
 });

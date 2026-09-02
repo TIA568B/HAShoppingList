@@ -91,8 +91,12 @@ async def test_options_flow_grace_range(
         assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 
-        # Valid grace value persists.
+        # init is now a menu; navigate to Display options.
         result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
+        assert result["type"] is FlowResultType.MENU
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"], {"next_step_id": "display_options"}
+        )
         assert result["type"] is FlowResultType.FORM
         result2 = await hass.config_entries.options.async_configure(
             result["flow_id"],
@@ -118,6 +122,9 @@ async def test_options_flow_grace_out_of_range_rejected(
         await hass.async_block_till_done()
 
         result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"], {"next_step_id": "display_options"}
+        )
         try:
             await hass.config_entries.options.async_configure(
                 result["flow_id"],

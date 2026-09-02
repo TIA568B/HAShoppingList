@@ -62,6 +62,7 @@ hashoppinglist/
 | `store.py` | Persist/load/migrate CategoryMap (categories, overrides, **shops, shop_overrides**, seed_version); v1→v2 re-seed | HA Store, models, defaults |
 | `defaults.py` | Load the shipped `default_map.json` seed (defensive) | default_map.json, models |
 | `default_map.json` | Shipped seed taxonomy + shops (editable in a release) | — |
+| `map_ops.py` | Pure category/shop mutations + validation (single source of truth for services **and** options flow) | models, categoriser, const |
 | `models.py` | Shared dataclasses/types (incl. `Shop`) | — |
 | `sensor.py` | Expose projection as attributes; availability | coordinator |
 | `services.py` | Category **and shop** maintenance + learning services | store, coordinator, const |

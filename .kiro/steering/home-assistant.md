@@ -100,9 +100,16 @@ Follow current (2025-2026) Home Assistant core integration conventions.
 
 ## Config / options / reconfigure flow
 
-- Options flow tunes `grace_period_seconds` (8–30, default 9), `show_completed`,
-  `collapse_empty_categories`, `redact_items_in_diagnostics`. Options must **not** change the
-  source entity.
+- Options flow is **menu-style** (`async_show_menu`): Display options · Manage categories ·
+  Manage shops · Reload defaults. **Display options** tunes `grace_period_seconds` (8–30,
+  default 9), `show_completed`, `collapse_empty_categories`, `redact_items_in_diagnostics` and
+  must **not** change the source entity. **Manage categories/shops** and **Reload defaults**
+  apply through the shared `map_ops` module (the single source of truth used by the services
+  too) against the store + recompute — not `entry.options`.
+- **Do not build hand-rolled text-input editors inside the card.** Taxonomy curation uses the
+  native Options flow; per-item fixes use the card's buttons-only pencil menu. Any card text
+  input (e.g. add-item) must call `stopKeyboardPropagation` so keystrokes don't trigger HA's
+  global shortcuts. (The 0.4.0 inline settings panel was removed for exactly this reason.)
 - Because `entry.unique_id` is the source entity id, changing the source is a **reconfigure**
   operation (`async_step_reconfigure`) that updates `entry.data` and `unique_id` atomically, not
   an options edit (finding M-3).

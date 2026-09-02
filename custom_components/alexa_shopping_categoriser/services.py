@@ -16,7 +16,7 @@ from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 
-from .categoriser import normalize
+from . import map_ops
 from .const import (
     ATTR_APPLY_TO_UID,
     ATTR_CATEGORY,
@@ -28,8 +28,6 @@ from .const import (
     ATTR_SHOP,
     DOMAIN,
     MAX_KEYWORD_LENGTH,
-    MAX_NAME_LENGTH,
-    NO_PREFERENCE,
     SERVICE_ADD_CATEGORY,
     SERVICE_ADD_SHOP,
     SERVICE_ASSIGN_SHOP,
@@ -40,9 +38,8 @@ from .const import (
     SERVICE_RECATEGORISE_ITEM,
     SERVICE_RELOAD_DEFAULTS,
     SERVICE_RELOAD_MAPS,
-    UNCATEGORISED,
 )
-from .models import Category, CategoryMap, Shop
+from .models import CategoryMap
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
@@ -145,28 +142,6 @@ RELOAD_MAPS_SCHEMA = vol.Schema({_ENTRY_ID: cv.string})
 RELOAD_DEFAULTS_SCHEMA = vol.Schema({_ENTRY_ID: cv.string})
 
 
-def _validate_name(raw: str) -> str:
-    """Validate + normalize a user-supplied category/shop display name."""
-    name = raw.strip()
-    if not name:
-        raise ServiceValidationError("Name must not be empty")
-    if len(name) > MAX_NAME_LENGTH:
-        raise ServiceValidationError(f"Name exceeds {MAX_NAME_LENGTH} characters")
-    if any(ord(ch) < 32 for ch in name):
-        raise ServiceValidationError("Name must not contain control characters")
-    return name
-
-
-def _clean_keywords(raw: list[str]) -> list[str]:
-    """Strip and drop empties from a keyword list."""
-    cleaned: list[str] = []
-    for kw in raw:
-        stripped = kw.strip()
-        if stripped:
-            cleaned.append(stripped)
-    return cleaned
-
-
 def _coordinator_of(entry: ConfigEntry) -> AlexaShoppingCoordinator:
     """Return the coordinator from an entry's runtime data."""
     runtime: AlexaShoppingRuntimeData = entry.runtime_data
@@ -213,92 +188,37 @@ async def _persist_and_recompute(
 async def _handle_recategorise_item(hass: HomeAssistant, call: ServiceCall) -> None:
     coordinator = _resolve_coordinator(hass, call)
     category_map = _store_of(coordinator).category_map
-    category = call.data[ATTR_CATEGORY].strip()
-
-    valid = {c.name for c in category_map.categories} | {UNCATEGORISED}
-    if category not in valid:
-        raise ServiceValidationError(f"Unknown category: {category}")
-
-    key = normalize(call.data[ATTR_ITEM_TEXT])
-    if not key:
-        raise ServiceValidationError("item_text normalizes to empty")
-
-    if category == UNCATEGORISED:
-        category_map.overrides.pop(key, None)
-    else:
-        category_map.overrides[key] = category
-    # `apply_to_uid` is accepted for API-contract compatibility. It is intentionally a
-    # no-op beyond the recompute below: the coordinator rebuilds the whole projection from
-    # the source list + maps on every change, so the matching item (by uid or by any other
-    # item sharing the normalized text) already moves immediately. There is no per-uid
-    # mutation to perform because the projection is fully derived (NFR3).
+    map_ops.set_category_override(
+        category_map, call.data[ATTR_ITEM_TEXT], call.data[ATTR_CATEGORY].strip()
+    )
+    # `apply_to_uid` is accepted for API-contract compatibility; the recompute below fully
+    # rebuilds the projection so the item moves immediately (projection is derived, NFR3).
     await _persist_and_recompute(coordinator, category_map)
 
 
 async def _handle_add_category(hass: HomeAssistant, call: ServiceCall) -> None:
     coordinator = _resolve_coordinator(hass, call)
     category_map = _store_of(coordinator).category_map
-    name = _validate_name(call.data[ATTR_NAME])
-
-    if name.casefold() == UNCATEGORISED.casefold():
-        raise ServiceValidationError(f"{UNCATEGORISED} is reserved")
-    if any(c.name.casefold() == name.casefold() for c in category_map.categories):
-        raise ServiceValidationError(f"Category '{name}' already exists")
-
-    keywords = _clean_keywords(call.data.get(ATTR_KEYWORDS, []))
-    category_map.categories.append(Category(name=name, keywords=keywords))
+    map_ops.add_category(category_map, call.data[ATTR_NAME], call.data.get(ATTR_KEYWORDS))
     await _persist_and_recompute(coordinator, category_map)
 
 
 async def _handle_edit_category(hass: HomeAssistant, call: ServiceCall) -> None:
     coordinator = _resolve_coordinator(hass, call)
     category_map = _store_of(coordinator).category_map
-    name = call.data[ATTR_NAME].strip()
-
-    target = next(
-        (c for c in category_map.categories if c.name.casefold() == name.casefold()), None
+    map_ops.edit_category(
+        category_map,
+        call.data[ATTR_NAME],
+        new_name=call.data.get(ATTR_NEW_NAME),
+        keywords=call.data.get(ATTR_KEYWORDS),
     )
-    if target is None:
-        raise ServiceValidationError(f"Category '{name}' not found")
-
-    if ATTR_NEW_NAME in call.data:
-        new_name = _validate_name(call.data[ATTR_NEW_NAME])
-        if new_name.casefold() == UNCATEGORISED.casefold():
-            raise ServiceValidationError(f"{UNCATEGORISED} is reserved")
-        if new_name.casefold() != target.name.casefold() and any(
-            c.name.casefold() == new_name.casefold() for c in category_map.categories
-        ):
-            raise ServiceValidationError(f"Category '{new_name}' already exists")
-        old_name = target.name
-        target.name = new_name
-        # Migrate learned overrides pointing at the old name.
-        for key, value in list(category_map.overrides.items()):
-            if value == old_name:
-                category_map.overrides[key] = new_name
-
-    if ATTR_KEYWORDS in call.data:
-        target.keywords = _clean_keywords(call.data[ATTR_KEYWORDS])
-
     await _persist_and_recompute(coordinator, category_map)
 
 
 async def _handle_delete_category(hass: HomeAssistant, call: ServiceCall) -> None:
     coordinator = _resolve_coordinator(hass, call)
     category_map = _store_of(coordinator).category_map
-    name = call.data[ATTR_NAME].strip()
-
-    target = next(
-        (c for c in category_map.categories if c.name.casefold() == name.casefold()), None
-    )
-    if target is None:
-        raise ServiceValidationError(f"Category '{name}' not found")
-
-    category_map.categories.remove(target)
-    # Overrides pointing at the deleted category self-heal on recompute; drop them so
-    # they do not resurrect if the name is re-added later with a different intent.
-    for key, value in list(category_map.overrides.items()):
-        if value == target.name:
-            del category_map.overrides[key]
+    map_ops.delete_category(category_map, call.data[ATTR_NAME])
     await _persist_and_recompute(coordinator, category_map)
 
 
@@ -308,41 +228,20 @@ async def _handle_delete_category(hass: HomeAssistant, call: ServiceCall) -> Non
 async def _handle_assign_shop(hass: HomeAssistant, call: ServiceCall) -> None:
     coordinator = _resolve_coordinator(hass, call)
     category_map = _store_of(coordinator).category_map
-    shop = call.data[ATTR_SHOP].strip()
-
-    key = normalize(call.data[ATTR_ITEM_TEXT])
-    if not key:
-        raise ServiceValidationError("item_text normalizes to empty")
-
-    if shop.casefold() == NO_PREFERENCE.casefold():
-        category_map.shop_overrides.pop(key, None)
-    else:
-        if not any(s.name.casefold() == shop.casefold() for s in category_map.shops):
-            raise ServiceValidationError(f"Unknown shop: {shop}")
-        # Store the canonical shop name.
-        canonical = next(s.name for s in category_map.shops if s.name.casefold() == shop.casefold())
-        category_map.shop_overrides[key] = canonical
+    map_ops.set_shop_override(category_map, call.data[ATTR_ITEM_TEXT], call.data[ATTR_SHOP].strip())
     await _persist_and_recompute(coordinator, category_map)
 
 
 async def _handle_add_shop(hass: HomeAssistant, call: ServiceCall) -> None:
     coordinator = _resolve_coordinator(hass, call)
     category_map = _store_of(coordinator).category_map
-    name = _validate_name(call.data[ATTR_NAME])
-
-    if name.casefold() == NO_PREFERENCE.casefold():
-        raise ServiceValidationError(f"{NO_PREFERENCE} is reserved")
-    if any(s.name.casefold() == name.casefold() for s in category_map.shops):
-        raise ServiceValidationError(f"Shop '{name}' already exists")
-
-    keywords = _clean_keywords(call.data.get(ATTR_KEYWORDS, []))
-    category_map.shops.append(Shop(name=name, keywords=keywords))
-
-    if name.casefold() in _COMMON_ENGLISH_WORDS:
+    name = call.data[ATTR_NAME]
+    map_ops.add_shop(category_map, name, call.data.get(ATTR_KEYWORDS))
+    if map_ops.is_common_word(name, _COMMON_ENGLISH_WORDS):
         _LOGGER.warning(
             "Shop name '%s' is a common word; it may match ordinary item text (tier-1 "
             "shop-name-in-text resolution). Consider a more distinctive name.",
-            name,
+            name.strip(),
         )
     await _persist_and_recompute(coordinator, category_map)
 
@@ -350,53 +249,25 @@ async def _handle_add_shop(hass: HomeAssistant, call: ServiceCall) -> None:
 async def _handle_edit_shop(hass: HomeAssistant, call: ServiceCall) -> None:
     coordinator = _resolve_coordinator(hass, call)
     category_map = _store_of(coordinator).category_map
-    name = call.data[ATTR_NAME].strip()
-
-    target = next((s for s in category_map.shops if s.name.casefold() == name.casefold()), None)
-    if target is None:
-        raise ServiceValidationError(f"Shop '{name}' not found")
-
-    if ATTR_NEW_NAME in call.data:
-        new_name = _validate_name(call.data[ATTR_NEW_NAME])
-        if new_name.casefold() == NO_PREFERENCE.casefold():
-            raise ServiceValidationError(f"{NO_PREFERENCE} is reserved")
-        if new_name.casefold() != target.name.casefold() and any(
-            s.name.casefold() == new_name.casefold() for s in category_map.shops
-        ):
-            raise ServiceValidationError(f"Shop '{new_name}' already exists")
-        old_name = target.name
-        target.name = new_name
-        for key, value in list(category_map.shop_overrides.items()):
-            if value == old_name:
-                category_map.shop_overrides[key] = new_name
-        if new_name.casefold() in _COMMON_ENGLISH_WORDS:
-            _LOGGER.warning(
-                "Shop name '%s' is a common word; it may match ordinary item text.",
-                new_name,
-            )
-
-    if ATTR_KEYWORDS in call.data:
-        target.keywords = _clean_keywords(call.data[ATTR_KEYWORDS])
-
+    new_name = call.data.get(ATTR_NEW_NAME)
+    map_ops.edit_shop(
+        category_map,
+        call.data[ATTR_NAME],
+        new_name=new_name,
+        keywords=call.data.get(ATTR_KEYWORDS),
+    )
+    if new_name and map_ops.is_common_word(new_name, _COMMON_ENGLISH_WORDS):
+        _LOGGER.warning(
+            "Shop name '%s' is a common word; it may match ordinary item text.",
+            new_name.strip(),
+        )
     await _persist_and_recompute(coordinator, category_map)
 
 
 async def _handle_delete_shop(hass: HomeAssistant, call: ServiceCall) -> None:
     coordinator = _resolve_coordinator(hass, call)
     category_map = _store_of(coordinator).category_map
-    name = call.data[ATTR_NAME].strip()
-
-    if name.casefold() == NO_PREFERENCE.casefold():
-        raise ServiceValidationError(f"{NO_PREFERENCE} cannot be deleted")
-
-    target = next((s for s in category_map.shops if s.name.casefold() == name.casefold()), None)
-    if target is None:
-        raise ServiceValidationError(f"Shop '{name}' not found")
-
-    category_map.shops.remove(target)
-    for key, value in list(category_map.shop_overrides.items()):
-        if value == target.name:
-            del category_map.shop_overrides[key]
+    map_ops.delete_shop(category_map, call.data[ATTR_NAME])
     await _persist_and_recompute(coordinator, category_map)
 
 

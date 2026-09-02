@@ -15,9 +15,14 @@ contract is canonical in `docs/plans/06-data-model-and-contract.md`.
 - The card is a **client** of two public surfaces only: the categorised **sensor attributes**
   (canonical schema in `docs/plans/06`) and documented HA services. It holds no private contract
   with Python internals.
-- Read categories/keywords for the settings panel from the sensor's `category_definitions`
-  attribute (Req 6.1), and shops/keyword-rules from `shop_definitions` (Req 7.1). Do not invent a
-  private read path.
+- Read categories/shops for the per-item **pencil menu's** option lists from the sensor's
+  `category_definitions` (Req 6.1) and `shop_definitions` (Req 7.1) attributes. Do not invent a
+  private read path. **Taxonomy curation (add/rename/delete) lives in the native Options flow,
+  not the card** (0.5.0). The card's editing surface is the per-item pencil menu — **buttons
+  only, no text inputs** — so it cannot capture HA keyboard shortcuts. The 0.4.0 in-card inline
+  settings form was removed for that reason.
+- Show a small **version footer** on the card (kept in step with `manifest.json`) so a
+  stale/cached bundle is obvious at a glance.
 - **Shop preference (Req 7):** render a **two-level tree — shop → category (aisle) → items** from
   `shop_groups` (`No Preference` last; `Uncategorised` last within each shop). Each item shows its
   `category`. Shop assignment via `assign_shop` (`No Preference` clears it); shop management via
