@@ -54,3 +54,7 @@ class CategoryMap:
     overrides: dict[str, str] = field(default_factory=dict)
     shops: list[Shop] = field(default_factory=list)
     shop_overrides: dict[str, str] = field(default_factory=dict)
+    # The shipped default_map.json seed version this map's categories/shops were last
+    # seeded from (0 if pre-feature / unknown). Used by the re-seed migration and
+    # reload_defaults; not part of the frontend contract.
+    seed_version: int = 0

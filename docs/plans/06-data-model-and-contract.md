@@ -40,6 +40,7 @@ class CategoryMap:
     overrides: dict[str, str]                   # normalized_text -> category name (learned)
     shops: list[Shop]                           # ordered; user-managed shops (excl. "No Preference"), each with keyword rules
     shop_overrides: dict[str, str]              # normalized_text -> shop name (learned, Req 7.2)
+    seed_version: int = 0                       # which shipped default_map.json seed built categories/shops (0.4.0+)
 
 # A Projection is what the coordinator returns and the sensor exposes:
 Projection = dict  # see JSON contract below (built from CategorisedItems)
@@ -102,19 +103,37 @@ Key: `alexa_shopping_categoriser.<entry_id>` (one store per config entry).
 - Storage holds **no item state** (checked/unchecked) and no copy of the list — only the maps and
   learned overrides. This keeps the projection rebuildable and drift-free (NFR3).
 
+### Seed source (0.4.0+)
+
+- The default taxonomy and shops are **shipped in `default_map.json`** (data, not Python), read
+  by `defaults.py` (`default_categories()` / `default_shops()` / `default_seed_version()`). This
+  lets defaults be updated in a release without a code change and re-applied on demand.
+  See `docs/plans/feature-map-management/`.
+- The stored map carries a `seed_version` (int): which shipped seed the current
+  `categories`/`shops` were last built from. It is persisted alongside `schema_version` and used
+  by the migrator, the `reload_defaults` service, and diagnostics. It is **not** part of the
+  frontend contract.
+
 ### Migration
 
-- **`schema_version` is 1**, and version 1 **includes** `categories`, `overrides`, `shops`, and
-  `shop_overrides` (the shop fields were added during design, before any store shipped — finding
-  F4-1). There is no v0→v1 category-only store in the wild.
-- **Defensive load:** `store.py` must tolerate a store that is missing any top-level key by
-  injecting defaults — `categories`/`shops` default to the seed sets, `overrides`/`shop_overrides`
-  default to `{}` (use `.get(key, default)`, never index). This makes loading an older/partial
-  store safe without a dedicated migrator.
+- **`schema_version` is 2** (bumped 1 → 2 in 0.4.0). Version 1 included `categories`,
+  `overrides`, `shops`, `shop_overrides` (shop fields added during design — finding F4-1); v2
+  adds `seed_version` and the re-seed migrator below.
+- **Defensive load:** `store.py` tolerates a store missing any top-level key by injecting
+  defaults — `categories`/`shops` default to the seed sets, `overrides`/`shop_overrides` default
+  to `{}` (use `.get(key, default)`, never index).
+- **v1 → v2 re-seed migrator (0.4.0):** on loading a `schema_version < 2` store, **replace**
+  `categories`/`shops` from `default_map.json` and **preserve** `overrides`/`shop_overrides`
+  (decision OQ-A). Rationale: the pre-0.4.0 store was test-only, so a clean re-seed makes the
+  shipped taxonomy the live map on upgrade. The migrator is **idempotent** (never re-runs once
+  `schema_version` reaches 2) and has a migration test. Learned overrides self-heal if they point
+  at a category/shop the re-seed removed.
 - On load, if `schema_version` < current, run ordered migrators, then persist. Future schema
   changes bump `schema_version` and add an ordered migrator + a migration test.
 - The store `schema_version` (persistence) is independent of the sensor `attributes_version`
   (frontend contract) — see the sensor contract section.
+- The on-demand equivalent of the re-seed is the **`reload_defaults`** service (below): the
+  same replace-categories/shops-keep-overrides operation, triggered by the user.
 
 ## Sensor attribute contract (attributes_version 3)
 
@@ -292,7 +311,11 @@ delete_shop:
     entry_id: { required: false }
     name: { required: true }
 
-reload_maps:   # reloads the entire store: categories AND shops (finding F4-3)
+reload_maps:   # re-read the store from disk into memory + recompute (finding F4-3)
+  fields:
+    entry_id: { required: false }
+
+reload_defaults:   # replace categories/shops from default_map.json (keep overrides) + recompute
   fields:
     entry_id: { required: false }
 ```
@@ -319,4 +342,10 @@ Behavioral contract:
 - `delete_shop` removes the shop (and its keyword rules); any item preferring it — via learned
   override or keyword rule — falls through to `No Preference` on the next recompute; items are
   never deleted (Req 7.6). `No Preference` cannot be deleted.
+- `reload_maps` re-reads the store from disk into memory and recomputes (non-destructive; for
+  out-of-band store edits).
+- `reload_defaults` (0.4.0) **replaces** `categories`/`shops` from the shipped
+  `default_map.json` and **preserves** `overrides`/`shop_overrides` (the on-demand equivalent of
+  the v1→v2 re-seed migrator). It is **destructive to category/shop edits**, so the card guards
+  it behind a confirm dialog. Distinct from `reload_maps`.
 - All services persist the store, then request a coordinator recompute.

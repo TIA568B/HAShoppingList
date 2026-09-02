@@ -29,7 +29,10 @@ DEFAULT_REDACT_ITEMS_IN_DIAGNOSTICS: Final = True
 # --- Config-entry / store schema versions ---------------------------------
 # These two counters version different things and move independently.
 CONFIG_ENTRY_VERSION: Final = 1
-STORE_SCHEMA_VERSION: Final = 1
+# Bumped 1 -> 2 for the 0.4.0 one-time re-seed migration (categories/shops re-seeded from
+# the shipped default_map.json; learned overrides preserved). See
+# docs/plans/feature-map-management/03-migration-and-reload.md.
+STORE_SCHEMA_VERSION: Final = 2
 # The frontend/sensor attribute contract version (docs/plans/06).
 ATTRIBUTES_VERSION: Final = 3
 
@@ -68,6 +71,7 @@ SERVICE_ADD_SHOP: Final = "add_shop"
 SERVICE_EDIT_SHOP: Final = "edit_shop"
 SERVICE_DELETE_SHOP: Final = "delete_shop"
 SERVICE_RELOAD_MAPS: Final = "reload_maps"
+SERVICE_RELOAD_DEFAULTS: Final = "reload_defaults"
 
 # --- Service field names --------------------------------------------------
 ATTR_ENTRY_ID: Final = "entry_id"

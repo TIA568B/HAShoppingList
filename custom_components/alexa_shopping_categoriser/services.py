@@ -38,6 +38,7 @@ from .const import (
     SERVICE_EDIT_CATEGORY,
     SERVICE_EDIT_SHOP,
     SERVICE_RECATEGORISE_ITEM,
+    SERVICE_RELOAD_DEFAULTS,
     SERVICE_RELOAD_MAPS,
     UNCATEGORISED,
 )
@@ -140,6 +141,8 @@ DELETE_SHOP_SCHEMA = vol.Schema(
 )
 
 RELOAD_MAPS_SCHEMA = vol.Schema({_ENTRY_ID: cv.string})
+
+RELOAD_DEFAULTS_SCHEMA = vol.Schema({_ENTRY_ID: cv.string})
 
 
 def _validate_name(raw: str) -> str:
@@ -403,6 +406,15 @@ async def _handle_reload_maps(hass: HomeAssistant, call: ServiceCall) -> None:
     await coordinator.async_recompute()
 
 
+async def _handle_reload_defaults(hass: HomeAssistant, call: ServiceCall) -> None:
+    # Destructive: REPLACE categories/shops from the shipped default_map.json, PRESERVE
+    # learned corrections (decision OQ-A). The card guards this behind a confirm dialog.
+    coordinator = _resolve_coordinator(hass, call)
+    await _store_of(coordinator).async_reload_defaults()
+    _LOGGER.info("Reloaded categories and shops from defaults; learned corrections preserved")
+    await coordinator.async_recompute()
+
+
 _ServiceHandler = Callable[[HomeAssistant, ServiceCall], Awaitable[None]]
 
 _SERVICE_TABLE: tuple[tuple[str, vol.Schema, _ServiceHandler], ...] = (
@@ -415,6 +427,7 @@ _SERVICE_TABLE: tuple[tuple[str, vol.Schema, _ServiceHandler], ...] = (
     (SERVICE_EDIT_SHOP, EDIT_SHOP_SCHEMA, _handle_edit_shop),
     (SERVICE_DELETE_SHOP, DELETE_SHOP_SCHEMA, _handle_delete_shop),
     (SERVICE_RELOAD_MAPS, RELOAD_MAPS_SCHEMA, _handle_reload_maps),
+    (SERVICE_RELOAD_DEFAULTS, RELOAD_DEFAULTS_SCHEMA, _handle_reload_defaults),
 )
 
 

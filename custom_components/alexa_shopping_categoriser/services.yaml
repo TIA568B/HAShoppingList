@@ -149,3 +149,11 @@ reload_maps:
       selector:
         config_entry:
           integration: alexa_shopping_categoriser
+
+reload_defaults:
+  fields:
+    entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: alexa_shopping_categoriser

@@ -6,6 +6,7 @@
 import { AddReconciler } from "./add-reconciler.js";
 import { CollapseState } from "./collapse-state.js";
 import { setText } from "./escape.js";
+import { renderSettings } from "./settings-panel.js";
 import { ItemState, TickController } from "./tick-controller.js";
 
 const SUPPORTED_ATTRIBUTES_VERSION = 3;
@@ -21,6 +22,8 @@ export class AlexaShoppingCategoriserCard extends HTMLElement {
     this._adds = new AddReconciler();
     this._errors = [];
     this._reviewBannerDismissed = false;
+    this._settingsOpen = false;
+    this._confirmingReload = false;
     this._tick = new TickController({
       updateItem: (uid, status) => this._updateItem(uid, status),
       onError: (e) => this._pushError(e),
@@ -116,14 +119,32 @@ export class AlexaShoppingCategoriserCard extends HTMLElement {
     });
   }
 
+  // Generic integration-service caller used by the settings panels. Surfaces a
+  // dismissible error (naming the action) on failure and never throws to the caller.
+  async _callIntegration(service, data, actionLabel) {
+    try {
+      await this._hass.callService(INTEGRATION_DOMAIN, service, data);
+      return true;
+    } catch (err) {
+      this._pushRawError(`Couldn't ${actionLabel}: ${this._serviceErrorMessage(err)}`);
+      return false;
+    }
+  }
+
+  _serviceErrorMessage(err) {
+    // HA wraps ServiceValidationError; surface its message if present, else a generic hint.
+    const msg = err && (err.message || err.error || (err.body && err.body.message));
+    return typeof msg === "string" && msg.trim() ? msg : "please check the value and try again";
+  }
+
   _pushError(e) {
     const label =
-      e.action === "complete"
-        ? "complete"
-        : e.action === "undo"
-          ? "undo"
-          : e.action;
-    this._errors.push(`Failed to ${label} "${e.name}". Please try again.`);
+      e.action === "complete" ? "complete" : e.action === "undo" ? "undo" : e.action;
+    this._pushRawError(`Failed to ${label} "${e.name}". Please try again.`);
+  }
+
+  _pushRawError(message) {
+    this._errors.push(message);
     this._render();
   }
 
@@ -189,6 +210,100 @@ export class AlexaShoppingCategoriserCard extends HTMLElement {
     if (renderedShops === 0) {
       container.appendChild(this._msg("Your shopping list is empty."));
     }
+
+    container.appendChild(this._renderSettings(attrs));
+  }
+
+  _renderSettings(attrs) {
+    return renderSettings({
+      categoryDefs: attrs.category_definitions || [],
+      shopDefs: attrs.shop_definitions || [],
+      open: this._settingsOpen,
+      onToggle: () => {
+        this._settingsOpen = !this._settingsOpen;
+        this._render();
+      },
+      category: {
+        onAdd: async ({ name, keywords }) => {
+          if (await this._callIntegration("add_category", { name, keywords }, `add category "${name}"`))
+            this._render();
+        },
+        onSave: async ({ originalName, newName, keywords }) => {
+          const data = { name: originalName, keywords };
+          if (newName && newName !== originalName) data.new_name = newName;
+          if (await this._callIntegration("edit_category", data, `save category "${originalName}"`))
+            this._render();
+        },
+        onDelete: async ({ name }) => {
+          if (await this._callIntegration("delete_category", { name }, `delete category "${name}"`))
+            this._render();
+        },
+      },
+      shop: {
+        onAdd: async ({ name, keywords }) => {
+          if (await this._callIntegration("add_shop", { name, keywords }, `add shop "${name}"`))
+            this._render();
+        },
+        onSave: async ({ originalName, newName, keywords }) => {
+          const data = { name: originalName, keywords };
+          if (newName && newName !== originalName) data.new_name = newName;
+          if (await this._callIntegration("edit_shop", data, `save shop "${originalName}"`))
+            this._render();
+        },
+        onDelete: async ({ name }) => {
+          if (await this._callIntegration("delete_shop", { name }, `delete shop "${name}"`))
+            this._render();
+        },
+      },
+      onReloadDefaults: () => this._buildReloadControl(),
+    });
+  }
+
+  // Two-step inline confirm for the destructive "reload defaults" action (no blocking
+  // window.confirm; keeps it testable and accessible).
+  _buildReloadControl() {
+    const wrap = document.createElement("div");
+    wrap.className = "asc-reload";
+
+    if (!this._confirmingReload) {
+      const btn = document.createElement("button");
+      btn.className = "asc-reload-btn";
+      setText(btn, "Reload defaults");
+      btn.setAttribute("aria-label", "Reload categories and shops from defaults");
+      btn.addEventListener("click", () => {
+        this._confirmingReload = true;
+        this._render();
+      });
+      wrap.appendChild(btn);
+      return wrap;
+    }
+
+    const warn = document.createElement("span");
+    warn.className = "asc-reload-warn";
+    setText(
+      warn,
+      "Replace your categories and shops with the shipped defaults? Your learned item corrections are kept.",
+    );
+    const confirm = document.createElement("button");
+    confirm.className = "asc-reload-confirm";
+    setText(confirm, "Confirm reload");
+    confirm.setAttribute("aria-label", "Confirm reload defaults");
+    confirm.addEventListener("click", async () => {
+      this._confirmingReload = false;
+      if (await this._callIntegration("reload_defaults", {}, "reload defaults")) {
+        this._render();
+      }
+    });
+    const cancel = document.createElement("button");
+    cancel.className = "asc-reload-cancel";
+    setText(cancel, "Cancel");
+    cancel.setAttribute("aria-label", "Cancel reload defaults");
+    cancel.addEventListener("click", () => {
+      this._confirmingReload = false;
+      this._render();
+    });
+    wrap.append(warn, confirm, cancel);
+    return wrap;
   }
 
   _msg(text) {
@@ -399,6 +514,18 @@ const CARD_CSS = `
   .asc-item { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
   .asc-name.checked { text-decoration: line-through; opacity: 0.6; }
   .asc-undo { margin-left: auto; }
+  .asc-settings { margin-top: 16px; border-top: 1px solid var(--divider-color, #444); padding-top: 8px; }
+  .asc-settings-toggle { background: none; border: none; cursor: pointer; font-weight: 600;
+    color: var(--primary-text-color); padding: 4px 0; }
+  .asc-settings-sub { margin: 8px 0 4px 6px; }
+  .asc-settings-sub h4 { margin: 8px 0 4px; }
+  .asc-def-row, .asc-def-add { display: flex; flex-wrap: wrap; gap: 6px; align-items: end;
+    padding: 4px 0; }
+  .asc-field { display: flex; flex-direction: column; font-size: 0.8em; gap: 2px; }
+  .asc-field input { padding: 4px; }
+  .asc-reload { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .asc-reload-warn { font-size: 0.85em; color: var(--warning-color, #ffa600); }
+  .asc-reload-confirm { color: var(--error-color, #db4437); }
   button:focus-visible { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: 2px; }
 `;
 

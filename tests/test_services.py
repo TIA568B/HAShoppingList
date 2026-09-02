@@ -315,6 +315,32 @@ async def test_reload_maps(hass: HomeAssistant, loaded_entry: MockConfigEntry) -
     assert _map(loaded_entry).categories
 
 
+async def test_reload_defaults_replaces_but_keeps_learning(
+    hass: HomeAssistant, loaded_entry: MockConfigEntry
+) -> None:
+    from custom_components.alexa_shopping_categoriser.const import SERVICE_RELOAD_DEFAULTS
+    from custom_components.alexa_shopping_categoriser.models import Category
+
+    cmap = _map(loaded_entry)
+    # User edits: a custom category + a learned override.
+    cmap.categories.append(Category(name="MyCustom", keywords=["gizmo"]))
+    await _call(
+        hass,
+        SERVICE_RECATEGORISE_ITEM,
+        {ATTR_ITEM_TEXT: "birthday candles", ATTR_CATEGORY: "Household"},
+    )
+    assert any(c.name == "MyCustom" for c in _map(loaded_entry).categories)
+
+    await _call(hass, SERVICE_RELOAD_DEFAULTS, {})
+
+    reloaded = _map(loaded_entry)
+    # Custom category replaced away by defaults; learned override preserved.
+    assert not any(c.name == "MyCustom" for c in reloaded.categories)
+    assert reloaded.overrides.get("birthday candles") == "Household"
+    assert any(c.name == "Fruit & Veg" for c in reloaded.categories)
+    assert reloaded.seed_version >= 1
+
+
 async def test_recategorise_empty_item_text_raises(
     hass: HomeAssistant, loaded_entry: MockConfigEntry
 ) -> None:

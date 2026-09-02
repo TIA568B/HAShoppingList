@@ -116,6 +116,13 @@
       "fields": {
         "entry_id": { "name": "Config entry", "description": "Target config entry (optional if only one exists)." }
       }
+    },
+    "reload_defaults": {
+      "name": "Reload defaults",
+      "description": "Replace your categories and shops with the shipped defaults and recompute. Your learned item corrections are kept. This overwrites any category/shop edits you have made.",
+      "fields": {
+        "entry_id": { "name": "Config entry", "description": "Target config entry (optional if only one exists)." }
+      }
     }
   },
   "issues": {

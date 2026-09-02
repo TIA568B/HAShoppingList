@@ -15,7 +15,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
 
 from .const import STORAGE_KEY_PREFIX, STORAGE_VERSION, STORE_SCHEMA_VERSION
-from .defaults import default_categories, default_shops
+from .defaults import default_categories, default_seed_version, default_shops
 from .models import Category, CategoryMap, Shop
 
 _LOGGER = logging.getLogger(__name__)
@@ -65,6 +65,28 @@ class CategoryStore:
         self._map = category_map
         await self.async_save()
 
+    async def async_reload_defaults(self) -> CategoryMap:
+        """Re-seed categories and shops from the shipped default map, keeping overrides.
+
+        This is the on-demand equivalent of the upgrade re-seed migration (the backing
+        operation for the ``reload_defaults`` service). It **replaces** the category and
+        shop lists with the shipped defaults but **preserves** learned overrides
+        (``overrides``/``shop_overrides``), which self-heal on the next recompute if they
+        point at a category/shop that no longer exists (decision OQ-A).
+        """
+        current = self.category_map
+        reseeded = CategoryMap(
+            schema_version=STORE_SCHEMA_VERSION,
+            categories=default_categories(),
+            overrides=dict(current.overrides),
+            shops=default_shops(),
+            shop_overrides=dict(current.shop_overrides),
+            seed_version=default_seed_version(),
+        )
+        self._map = reseeded
+        await self.async_save()
+        return reseeded
+
     # --- (de)serialization ------------------------------------------------
 
     @staticmethod
@@ -75,6 +97,7 @@ class CategoryStore:
             overrides={},
             shops=default_shops(),
             shop_overrides={},
+            seed_version=default_seed_version(),
         )
 
     @staticmethod
@@ -89,23 +112,7 @@ class CategoryStore:
 
         stored_version = raw.get("schema_version", STORE_SCHEMA_VERSION)
 
-        categories_raw = raw.get("categories")
-        if categories_raw is None:
-            categories = default_categories()
-            migrated = True
-        else:
-            categories = [
-                Category(name=c["name"], keywords=list(c.get("keywords", [])))
-                for c in categories_raw
-            ]
-
-        shops_raw = raw.get("shops")
-        if shops_raw is None:
-            shops = default_shops()
-            migrated = True
-        else:
-            shops = [Shop(name=s["name"], keywords=list(s.get("keywords", []))) for s in shops_raw]
-
+        # Overrides are user learning; always preserved (defensive default {}).
         overrides_raw = raw.get("overrides")
         if overrides_raw is None:
             overrides: dict[str, str] = {}
@@ -120,9 +127,44 @@ class CategoryStore:
         else:
             shop_overrides = dict(shop_overrides_raw)
 
-        if stored_version < STORE_SCHEMA_VERSION:
-            # Future ordered migrators run here; for now bump and persist.
+        seed_version = raw.get("seed_version", 0)
+        if not isinstance(seed_version, int):
+            seed_version = 0
+
+        if stored_version < 2:
+            # v1 -> v2 one-time re-seed migration (0.4.0): REPLACE categories/shops with the
+            # shipped defaults; PRESERVE overrides (decision OQ-A). The user confirmed the
+            # store was test-only, so a clean re-seed is intended. Idempotent: once
+            # schema_version reaches 2, this branch never runs again.
+            categories = default_categories()
+            shops = default_shops()
+            seed_version = default_seed_version()
             migrated = True
+            _LOGGER.info(
+                "Re-seeded categories and shops from default_map.json "
+                "(store schema v%s -> v%s); learned corrections preserved.",
+                stored_version,
+                STORE_SCHEMA_VERSION,
+            )
+        else:
+            categories_raw = raw.get("categories")
+            if categories_raw is None:
+                categories = default_categories()
+                migrated = True
+            else:
+                categories = [
+                    Category(name=c["name"], keywords=list(c.get("keywords", [])))
+                    for c in categories_raw
+                ]
+
+            shops_raw = raw.get("shops")
+            if shops_raw is None:
+                shops = default_shops()
+                migrated = True
+            else:
+                shops = [
+                    Shop(name=s["name"], keywords=list(s.get("keywords", []))) for s in shops_raw
+                ]
 
         category_map = CategoryMap(
             schema_version=STORE_SCHEMA_VERSION,
@@ -130,6 +172,7 @@ class CategoryStore:
             overrides=overrides,
             shops=shops,
             shop_overrides=shop_overrides,
+            seed_version=seed_version,
         )
         return category_map, migrated
 
@@ -137,6 +180,7 @@ class CategoryStore:
     def _serialize(category_map: CategoryMap) -> dict[str, Any]:
         return {
             "schema_version": category_map.schema_version,
+            "seed_version": category_map.seed_version,
             "categories": [
                 {"name": c.name, "keywords": list(c.keywords)} for c in category_map.categories
             ],

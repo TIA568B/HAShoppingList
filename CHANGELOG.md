@@ -6,6 +6,33 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-02
+
+### Added
+- **In-card settings panels** to manage the maps live, with no code or YAML: add / rename /
+  delete categories and shops and edit their keyword lists. Edits apply immediately (each
+  action calls the existing service, which persists and recomputes). Category/shop **ordering
+  is not editable yet** (deferred).
+- **Defaults now ship as `default_map.json`** (data, not Python). The seed taxonomy/shops are
+  read from this file, so future default updates are a JSON edit rather than a code change.
+- **`reload_defaults` service** and a **"Reload defaults" button** (behind a confirm) in the
+  settings panel: replaces your categories and shops with the shipped defaults while **keeping**
+  your learned item corrections. Distinct from `reload_maps` (which only re-reads the store
+  from disk).
+
+### Changed
+- Store schema `schema_version` bumped **1 → 2**. On upgrade, an `async_migrate`-style store
+  migrator performs a **one-time re-seed**: categories and shops are replaced from
+  `default_map.json` while `overrides`/`shop_overrides` (learned corrections) are preserved.
+  The migration is idempotent. This makes the 0.3.0 taxonomy/shops the live map on upgrade
+  without a manual step. A migration test covers it.
+- `CategoryMap` gains a `seed_version` field recording which shipped seed the categories/shops
+  were last built from (used by the migrator, `reload_defaults`, and diagnostics).
+
+### Notes
+- The sensor attribute contract is unchanged (`attributes_version` stays 3) — the panels read
+  the existing `category_definitions` / `shop_definitions` attributes.
+
 ## [0.3.0] - 2026-09-02
 
 ### Added

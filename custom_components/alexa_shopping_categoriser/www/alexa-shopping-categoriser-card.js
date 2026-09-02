@@ -165,6 +165,142 @@ function setText(el, value) {
   el.textContent = value == null ? "" : String(value);
 }
 
+// Settings panels for the card: live editors for categories and shops (Option A,
+// docs/plans/feature-map-management/02). Pure DOM builder — no direct HA access; the card
+// injects async action callbacks (which call the existing integration services) and an
+// error/refresh path. All user text is written via setText (never innerHTML). Reordering is
+// intentionally NOT offered in 0.4.0 (decision OQ-B, deferred).
+
+
+// Parse a comma-separated keyword string into a clean list.
+function parseKeywords(text) {
+  if (!text) return [];
+  return text
+    .split(",")
+    .map((k) => k.trim())
+    .filter((k) => k.length > 0);
+}
+
+function button(label, onClick, { className, ariaLabel } = {}) {
+  const b = document.createElement("button");
+  setText(b, label);
+  if (className) b.className = className;
+  if (ariaLabel) b.setAttribute("aria-label", ariaLabel);
+  b.addEventListener("click", onClick);
+  return b;
+}
+
+function labelledInput(labelText, value, placeholder) {
+  const wrap = document.createElement("label");
+  wrap.className = "asc-field";
+  const span = document.createElement("span");
+  setText(span, labelText);
+  const input = document.createElement("input");
+  input.type = "text";
+  input.value = value == null ? "" : String(value);
+  if (placeholder) input.placeholder = placeholder;
+  input.setAttribute("aria-label", labelText);
+  wrap.append(span, input);
+  return { wrap, input };
+}
+
+// Build one editable row for a definition (category or shop): name + keywords + Save/Delete.
+function definitionRow(def, { onSave, onDelete }) {
+  const row = document.createElement("div");
+  row.className = "asc-def-row";
+
+  const name = labelledInput("Name", def.name, "name");
+  const keywords = labelledInput("Keywords", (def.keywords || []).join(", "), "comma, separated");
+
+  const save = button(
+    "Save",
+    () =>
+      onSave({
+        originalName: def.name,
+        newName: name.input.value.trim(),
+        keywords: parseKeywords(keywords.input.value),
+      }),
+    { className: "asc-def-save", ariaLabel: `Save ${def.name}` },
+  );
+  const del = button("Delete", () => onDelete({ name: def.name }), {
+    className: "asc-def-delete",
+    ariaLabel: `Delete ${def.name}`,
+  });
+
+  row.append(name.wrap, keywords.wrap, save, del);
+  return row;
+}
+
+// Build the "add new" form for a definition list.
+function addForm(kind, { onAdd }) {
+  const form = document.createElement("div");
+  form.className = "asc-def-add";
+  const name = labelledInput(`New ${kind} name`, "", "name");
+  const keywords = labelledInput("Keywords", "", "comma, separated");
+  const add = button(
+    "Add",
+    () => {
+      const newName = name.input.value.trim();
+      if (!newName) return;
+      onAdd({ name: newName, keywords: parseKeywords(keywords.input.value) });
+      name.input.value = "";
+      keywords.input.value = "";
+    },
+    { className: "asc-def-addbtn", ariaLabel: `Add ${kind}` },
+  );
+  form.append(name.wrap, keywords.wrap, add);
+  return form;
+}
+
+function subPanel(titleText, defs, handlers, kind) {
+  const section = document.createElement("section");
+  section.className = "asc-settings-sub";
+  const heading = document.createElement("h4");
+  setText(heading, titleText);
+  section.appendChild(heading);
+
+  for (const def of defs || []) {
+    section.appendChild(
+      definitionRow(def, { onSave: handlers.onSave, onDelete: handlers.onDelete }),
+    );
+  }
+  section.appendChild(addForm(kind, { onAdd: handlers.onAdd }));
+  return section;
+}
+
+/**
+ * Render the collapsible settings panel.
+ * @param {object} opts
+ * @param {Array} opts.categoryDefs  from sensor `category_definitions`
+ * @param {Array} opts.shopDefs       from sensor `shop_definitions`
+ * @param {boolean} opts.open         card-local open/closed state
+ * @param {()=>void} opts.onToggle    toggle open/closed
+ * @param {object} opts.category      { onAdd, onSave, onDelete }
+ * @param {object} opts.shop          { onAdd, onSave, onDelete }
+ * @param {()=>void} [opts.onReloadDefaults]  optional reload-defaults action (M5)
+ */
+function renderSettings(opts) {
+  const root = document.createElement("section");
+  root.className = "asc-settings";
+
+  const toggle = button(opts.open ? "Settings ▾" : "Settings ▸", opts.onToggle, {
+    className: "asc-settings-toggle",
+    ariaLabel: "Toggle settings",
+  });
+  toggle.setAttribute("aria-expanded", String(!!opts.open));
+  root.appendChild(toggle);
+
+  if (!opts.open) return root;
+
+  root.appendChild(subPanel("Categories", opts.categoryDefs, opts.category, "category"));
+  root.appendChild(subPanel("Shops", opts.shopDefs, opts.shop, "shop"));
+
+  if (opts.onReloadDefaults) {
+    root.appendChild(opts.onReloadDefaults());
+  }
+  return root;
+}
+
 // Per-item tick / undo state machine — complete-on-tap + reversing undo (finding H-1,
 // docs/plans/08 & 11). Pure of the DOM: I/O (service calls), timers, and change
 // notifications are injected so this is unit-testable without a browser.
@@ -348,6 +484,8 @@ class AlexaShoppingCategoriserCard extends HTMLElement {
     this._adds = new AddReconciler();
     this._errors = [];
     this._reviewBannerDismissed = false;
+    this._settingsOpen = false;
+    this._confirmingReload = false;
     this._tick = new TickController({
       updateItem: (uid, status) => this._updateItem(uid, status),
       onError: (e) => this._pushError(e),
@@ -440,14 +578,32 @@ class AlexaShoppingCategoriserCard extends HTMLElement {
     });
   }
 
+  // Generic integration-service caller used by the settings panels. Surfaces a
+  // dismissible error (naming the action) on failure and never throws to the caller.
+  async _callIntegration(service, data, actionLabel) {
+    try {
+      await this._hass.callService(INTEGRATION_DOMAIN, service, data);
+      return true;
+    } catch (err) {
+      this._pushRawError(`Couldn't ${actionLabel}: ${this._serviceErrorMessage(err)}`);
+      return false;
+    }
+  }
+
+  _serviceErrorMessage(err) {
+    // HA wraps ServiceValidationError; surface its message if present, else a generic hint.
+    const msg = err && (err.message || err.error || (err.body && err.body.message));
+    return typeof msg === "string" && msg.trim() ? msg : "please check the value and try again";
+  }
+
   _pushError(e) {
     const label =
-      e.action === "complete"
-        ? "complete"
-        : e.action === "undo"
-          ? "undo"
-          : e.action;
-    this._errors.push(`Failed to ${label} "${e.name}". Please try again.`);
+      e.action === "complete" ? "complete" : e.action === "undo" ? "undo" : e.action;
+    this._pushRawError(`Failed to ${label} "${e.name}". Please try again.`);
+  }
+
+  _pushRawError(message) {
+    this._errors.push(message);
     this._render();
   }
 
@@ -513,6 +669,100 @@ class AlexaShoppingCategoriserCard extends HTMLElement {
     if (renderedShops === 0) {
       container.appendChild(this._msg("Your shopping list is empty."));
     }
+
+    container.appendChild(this._renderSettings(attrs));
+  }
+
+  _renderSettings(attrs) {
+    return renderSettings({
+      categoryDefs: attrs.category_definitions || [],
+      shopDefs: attrs.shop_definitions || [],
+      open: this._settingsOpen,
+      onToggle: () => {
+        this._settingsOpen = !this._settingsOpen;
+        this._render();
+      },
+      category: {
+        onAdd: async ({ name, keywords }) => {
+          if (await this._callIntegration("add_category", { name, keywords }, `add category "${name}"`))
+            this._render();
+        },
+        onSave: async ({ originalName, newName, keywords }) => {
+          const data = { name: originalName, keywords };
+          if (newName && newName !== originalName) data.new_name = newName;
+          if (await this._callIntegration("edit_category", data, `save category "${originalName}"`))
+            this._render();
+        },
+        onDelete: async ({ name }) => {
+          if (await this._callIntegration("delete_category", { name }, `delete category "${name}"`))
+            this._render();
+        },
+      },
+      shop: {
+        onAdd: async ({ name, keywords }) => {
+          if (await this._callIntegration("add_shop", { name, keywords }, `add shop "${name}"`))
+            this._render();
+        },
+        onSave: async ({ originalName, newName, keywords }) => {
+          const data = { name: originalName, keywords };
+          if (newName && newName !== originalName) data.new_name = newName;
+          if (await this._callIntegration("edit_shop", data, `save shop "${originalName}"`))
+            this._render();
+        },
+        onDelete: async ({ name }) => {
+          if (await this._callIntegration("delete_shop", { name }, `delete shop "${name}"`))
+            this._render();
+        },
+      },
+      onReloadDefaults: () => this._buildReloadControl(),
+    });
+  }
+
+  // Two-step inline confirm for the destructive "reload defaults" action (no blocking
+  // window.confirm; keeps it testable and accessible).
+  _buildReloadControl() {
+    const wrap = document.createElement("div");
+    wrap.className = "asc-reload";
+
+    if (!this._confirmingReload) {
+      const btn = document.createElement("button");
+      btn.className = "asc-reload-btn";
+      setText(btn, "Reload defaults");
+      btn.setAttribute("aria-label", "Reload categories and shops from defaults");
+      btn.addEventListener("click", () => {
+        this._confirmingReload = true;
+        this._render();
+      });
+      wrap.appendChild(btn);
+      return wrap;
+    }
+
+    const warn = document.createElement("span");
+    warn.className = "asc-reload-warn";
+    setText(
+      warn,
+      "Replace your categories and shops with the shipped defaults? Your learned item corrections are kept.",
+    );
+    const confirm = document.createElement("button");
+    confirm.className = "asc-reload-confirm";
+    setText(confirm, "Confirm reload");
+    confirm.setAttribute("aria-label", "Confirm reload defaults");
+    confirm.addEventListener("click", async () => {
+      this._confirmingReload = false;
+      if (await this._callIntegration("reload_defaults", {}, "reload defaults")) {
+        this._render();
+      }
+    });
+    const cancel = document.createElement("button");
+    cancel.className = "asc-reload-cancel";
+    setText(cancel, "Cancel");
+    cancel.setAttribute("aria-label", "Cancel reload defaults");
+    cancel.addEventListener("click", () => {
+      this._confirmingReload = false;
+      this._render();
+    });
+    wrap.append(warn, confirm, cancel);
+    return wrap;
   }
 
   _msg(text) {
@@ -723,6 +973,18 @@ const CARD_CSS = `
   .asc-item { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
   .asc-name.checked { text-decoration: line-through; opacity: 0.6; }
   .asc-undo { margin-left: auto; }
+  .asc-settings { margin-top: 16px; border-top: 1px solid var(--divider-color, #444); padding-top: 8px; }
+  .asc-settings-toggle { background: none; border: none; cursor: pointer; font-weight: 600;
+    color: var(--primary-text-color); padding: 4px 0; }
+  .asc-settings-sub { margin: 8px 0 4px 6px; }
+  .asc-settings-sub h4 { margin: 8px 0 4px; }
+  .asc-def-row, .asc-def-add { display: flex; flex-wrap: wrap; gap: 6px; align-items: end;
+    padding: 4px 0; }
+  .asc-field { display: flex; flex-direction: column; font-size: 0.8em; gap: 2px; }
+  .asc-field input { padding: 4px; }
+  .asc-reload { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .asc-reload-warn { font-size: 0.85em; color: var(--warning-color, #ffa600); }
+  .asc-reload-confirm { color: var(--error-color, #db4437); }
   button:focus-visible { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: 2px; }
 `;
 

@@ -72,7 +72,10 @@ flowchart LR
 ## Bootstrap / seeding (replaces spec's history mining — see doc 01, C2)
 
 On first setup:
-1. Load the **default vegan taxonomy** (doc 06 storage schema) — never blocks setup (Req 1.8).
+1. Load the **default vegan taxonomy** — shipped in `default_map.json` (0.4.0+; data, not
+   Python) and read by `defaults.py`; never blocks setup (Req 1.8). The vegan rules and matching
+   semantics are unchanged; only the seed's *storage location* moved from Python to JSON. See
+   `docs/plans/feature-map-management/`.
 2. Read the **current source list including completed items** via `todo.get_items`
    (both statuses) — this is the corpus (completed items are retained by `alexa_devices`).
 3. Categorise each corpus item with the default map; anything unmatched sits in

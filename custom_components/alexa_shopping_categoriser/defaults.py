@@ -1,150 +1,114 @@
-"""Default vegan taxonomy and default shops (seed data).
+"""Default vegan taxonomy and default shops, loaded from the shipped ``default_map.json``.
 
-Pure data + factory helpers, no Home Assistant import. Canonical values mirror
-docs/plans/06 and the product steering vegan rules.
+The seed data lives in ``default_map.json`` (data, not code) so it can be updated in a
+release without touching Python, and re-applied via the upgrade migration and the
+``reload_defaults`` service (see docs/plans/feature-map-management/). This module is a thin,
+defensive loader: the JSON is read+parsed once at import (off the event loop) and cached; a
+missing or malformed file degrades to a minimal safe fallback rather than crashing setup.
+
+No Home Assistant import — kept pure so it is unit-testable standalone.
 """
 
 from __future__ import annotations
 
+import json
+import logging
+from pathlib import Path
+from typing import Any
+
 from .models import Category, Shop
 
-# Default category taxonomy (order is significant: more specific categories earlier;
-# whole-word matching, first match wins). Vegan rules: milk -> Milk, dairy-style ->
-# Chilled, meat-style -> Fake Meat.
-_DEFAULT_CATEGORIES: tuple[tuple[str, tuple[str, ...]], ...] = (
-    (
-        "Fruit & Veg",
-        (
-            "apple",
-            "banana",
-            "carrot",
-            "carrots",
-            "lettuce",
-            "onion",
-            "onions",
-            "cucumber",
-            "garlic",
-            "tomato",
-            "tomatoes",
-            "potato",
-            "potatoes",
-            "pepper",
-            "peppers",
-            "mushroom",
-            "mushrooms",
-            "spinach",
-            "broccoli",
-        ),
-    ),
-    ("Milk", ("milk", "oat milk", "soy milk", "soya milk", "almond milk", "oat drink")),
-    # Sauces before Chilled so multi-word sauces (e.g. "salad cream") win over Chilled's
-    # bare "cream" keyword (whole-word, first-match-wins ordering).
-    (
-        "Sauces",
-        (
-            "sauce",
-            "teriyaki",
-            "teriyaki sauce",
-            "soy sauce",
-            "soya sauce",
-            "ketchup",
-            "mayo",
-            "mayonnaise",
-            "mango chutney",
-            "chutney",
-            "salad cream",
-            "pesto",
-        ),
-    ),
-    (
-        "Chilled",
-        ("cheese", "yogurt", "yogurts", "yoghurt", "yoghurts", "butter", "cream", "tofu"),
-    ),
-    # Fake Meat before Pantry so meat-substitute terms win first.
-    (
-        "Fake Meat",
-        (
-            "sausages",
-            "bacon",
-            "mince",
-            "chicken",
-            "chicken pieces",
-            "burgers",
-            "ham",
-        ),
-    ),
-    ("Baby", ("nappies", "nappy", "wipes", "baby wipes", "baby food", "formula")),
-    ("Bakery", ("bread", "bagel", "roll", "sourdough")),
-    ("Frozen", ("frozen peas", "vegan ice cream", "chips", "pizza")),
-    ("Drinks", ("juice", "squash", "coffee", "tea", "ice tea", "iced tea")),
-    (
-        "Pantry",
-        (
-            "pasta",
-            "rice",
-            "lentils",
-            "beans",
-            "chickpeas",
-            "olives",
-            "tinned",
-        ),
-    ),
-    ("Household", ("toilet roll", "washing up liquid", "bin bags")),
-)
+_LOGGER = logging.getLogger(__name__)
 
-# Default shops (excluding the implicit, non-removable "No Preference").
-# Order is significant for keyword-rule resolution.
-_DEFAULT_SHOPS: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("Aldi", ("nappies", "milk", "teriyaki", "teriyaki sauce", "veggie pasta")),
-    (
-        "Asda",
-        (
-            "clothes",
-            "clothing",
-            "t-shirt",
-            "tshirt",
-            "shirt",
-            "jumper",
-            "hoodie",
-            "socks",
-            "underwear",
-            "pants",
-            "knickers",
-            "boxers",
-            "vest",
-            "jeans",
-            "trousers",
-            "shorts",
-            "leggings",
-            "joggers",
-            "pyjamas",
-            "jammies",
-            "pjs",
-            "dress",
-            "skirt",
-            "coat",
-            "jacket",
-            "shoes",
-            "trainers",
-            "slippers",
-            "hat",
-            "gloves",
-            "scarf",
-        ),
-    ),
-    ("Tesco", ()),
-    ("Waitrose", ("pizza",)),
-    ("Morrisons", ()),
-    ("Lidl", ()),
-    ("Sainsburys", ()),
-)
+_DEFAULT_MAP_PATH = Path(__file__).parent / "default_map.json"
+
+# Minimal, vegan-safe fallback used only if the shipped JSON is missing/unreadable. It must
+# never block setup; the real seed is the JSON. Kept intentionally small.
+_FALLBACK: dict[str, Any] = {
+    "seed_version": 0,
+    "categories": [
+        {"name": "Fruit & Veg", "keywords": ["apple", "banana", "carrot"]},
+        {"name": "Milk", "keywords": ["milk", "oat milk"]},
+        {"name": "Chilled", "keywords": ["cheese", "yogurt", "butter", "tofu"]},
+        {"name": "Fake Meat", "keywords": ["sausages", "bacon", "mince"]},
+        {"name": "Household", "keywords": ["toilet roll"]},
+    ],
+    "shops": [
+        {"name": "Aldi", "keywords": ["milk"]},
+        {"name": "Asda", "keywords": ["clothes"]},
+        {"name": "Tesco", "keywords": []},
+    ],
+}
+
+
+def _load_raw() -> dict[str, Any]:
+    """Read and parse the shipped default map, falling back safely on any error."""
+    try:
+        with _DEFAULT_MAP_PATH.open(encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (OSError, ValueError) as err:
+        _LOGGER.warning(
+            "Could not read %s (%s); using the built-in fallback default map.",
+            _DEFAULT_MAP_PATH.name,
+            err,
+        )
+        return _FALLBACK
+
+    if not isinstance(data, dict):
+        _LOGGER.warning("%s is not a JSON object; using fallback.", _DEFAULT_MAP_PATH.name)
+        return _FALLBACK
+    return data
+
+
+# Parse once at import time (import runs off the event loop in HA), then hand out copies.
+_RAW: dict[str, Any] = _load_raw()
+
+
+def _coerce_categories(raw: Any) -> list[Category]:
+    if not isinstance(raw, list):
+        return [
+            Category(name=c["name"], keywords=list(c["keywords"])) for c in _FALLBACK["categories"]
+        ]
+    result: list[Category] = []
+    for entry in raw:
+        if not isinstance(entry, dict):
+            continue
+        name = entry.get("name")
+        if not isinstance(name, str) or not name.strip():
+            continue
+        keywords = entry.get("keywords", [])
+        kw = [k for k in keywords if isinstance(k, str)] if isinstance(keywords, list) else []
+        result.append(Category(name=name, keywords=list(kw)))
+    return result
+
+
+def _coerce_shops(raw: Any) -> list[Shop]:
+    if not isinstance(raw, list):
+        return [Shop(name=s["name"], keywords=list(s["keywords"])) for s in _FALLBACK["shops"]]
+    result: list[Shop] = []
+    for entry in raw:
+        if not isinstance(entry, dict):
+            continue
+        name = entry.get("name")
+        if not isinstance(name, str) or not name.strip():
+            continue
+        keywords = entry.get("keywords", [])
+        kw = [k for k in keywords if isinstance(k, str)] if isinstance(keywords, list) else []
+        result.append(Shop(name=name, keywords=list(kw)))
+    return result
+
+
+def default_seed_version() -> int:
+    """Return the shipped seed version (for migration/diagnostics)."""
+    version = _RAW.get("seed_version", 0)
+    return version if isinstance(version, int) else 0
 
 
 def default_categories() -> list[Category]:
-    """Return a fresh list of the default categories."""
-    return [Category(name=name, keywords=list(keywords)) for name, keywords in _DEFAULT_CATEGORIES]
+    """Return a fresh list of the default categories from the shipped map."""
+    return _coerce_categories(_RAW.get("categories"))
 
 
 def default_shops() -> list[Shop]:
     """Return a fresh list of the default shops (excludes 'No Preference')."""
-    return [Shop(name=name, keywords=list(keywords)) for name, keywords in _DEFAULT_SHOPS]
+    return _coerce_shops(_RAW.get("shops"))

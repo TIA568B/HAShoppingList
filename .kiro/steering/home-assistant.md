@@ -79,8 +79,10 @@ Follow current (2025-2026) Home Assistant core integration conventions.
 
 - Define services in `services.yaml` with full field metadata and translations.
 - Services: `recategorise_item`, `add_category`, `edit_category`, `delete_category`,
-  `assign_shop`, `add_shop`, `edit_shop`, `delete_shop`, `reload_maps` (reloads the whole store —
-  categories and shops). Validate all input with voluptuous schemas.
+  `assign_shop`, `add_shop`, `edit_shop`, `delete_shop`, `reload_maps` (re-read the whole store
+  from disk — categories and shops), `reload_defaults` (re-seed categories/shops from the shipped
+  `default_map.json`, keeping learned overrides; destructive to category/shop edits, so the card
+  confirms it). Validate all input with voluptuous schemas.
 - `delete_category` must reassign affected items to `Uncategorised`, never delete items.
   `delete_shop` must reassign affected items to `No Preference`, never delete items (Req 7.6).
 - `edit_category`/`edit_shop` rename must migrate learned overrides pointing at the old name to the

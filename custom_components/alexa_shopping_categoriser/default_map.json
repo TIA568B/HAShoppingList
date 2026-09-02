@@ -1,0 +1,78 @@
+{
+  "seed_version": 1,
+  "categories": [
+    {
+      "name": "Fruit & Veg",
+      "keywords": [
+        "apple", "banana", "carrot", "carrots", "lettuce", "onion", "onions",
+        "cucumber", "garlic", "tomato", "tomatoes", "potato", "potatoes",
+        "pepper", "peppers", "mushroom", "mushrooms", "spinach", "broccoli"
+      ]
+    },
+    {
+      "name": "Milk",
+      "keywords": ["milk", "oat milk", "soy milk", "soya milk", "almond milk", "oat drink"]
+    },
+    {
+      "name": "Sauces",
+      "keywords": [
+        "sauce", "teriyaki", "teriyaki sauce", "soy sauce", "soya sauce",
+        "ketchup", "mayo", "mayonnaise", "mango chutney", "chutney",
+        "salad cream", "pesto"
+      ]
+    },
+    {
+      "name": "Chilled",
+      "keywords": ["cheese", "yogurt", "yogurts", "yoghurt", "yoghurts", "butter", "cream", "tofu"]
+    },
+    {
+      "name": "Fake Meat",
+      "keywords": ["sausages", "bacon", "mince", "chicken", "chicken pieces", "burgers", "ham"]
+    },
+    {
+      "name": "Baby",
+      "keywords": ["nappies", "nappy", "wipes", "baby wipes", "baby food", "formula"]
+    },
+    {
+      "name": "Bakery",
+      "keywords": ["bread", "bagel", "roll", "sourdough"]
+    },
+    {
+      "name": "Frozen",
+      "keywords": ["frozen peas", "vegan ice cream", "chips", "pizza"]
+    },
+    {
+      "name": "Drinks",
+      "keywords": ["juice", "squash", "coffee", "tea", "ice tea", "iced tea"]
+    },
+    {
+      "name": "Pantry",
+      "keywords": ["pasta", "rice", "lentils", "beans", "chickpeas", "olives", "tinned"]
+    },
+    {
+      "name": "Household",
+      "keywords": ["toilet roll", "washing up liquid", "bin bags"]
+    }
+  ],
+  "shops": [
+    {
+      "name": "Aldi",
+      "keywords": ["nappies", "milk", "teriyaki", "teriyaki sauce", "veggie pasta"]
+    },
+    {
+      "name": "Asda",
+      "keywords": [
+        "clothes", "clothing", "t-shirt", "tshirt", "shirt", "jumper", "hoodie",
+        "socks", "underwear", "pants", "knickers", "boxers", "vest",
+        "jeans", "trousers", "shorts", "leggings", "joggers",
+        "pyjamas", "jammies", "pjs", "dress", "skirt", "coat", "jacket",
+        "shoes", "trainers", "slippers", "hat", "gloves", "scarf"
+      ]
+    },
+    { "name": "Tesco", "keywords": [] },
+    { "name": "Waitrose", "keywords": ["pizza"] },
+    { "name": "Morrisons", "keywords": [] },
+    { "name": "Lidl", "keywords": [] },
+    { "name": "Sainsburys", "keywords": [] }
+  ]
+}

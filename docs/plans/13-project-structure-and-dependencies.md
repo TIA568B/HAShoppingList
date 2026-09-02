@@ -12,6 +12,9 @@ hashoppinglist/
 │       ├── config_flow.py         # config + options flow
 │       ├── coordinator.py         # DataUpdateCoordinator; get_items; builds projection
 │       ├── categoriser.py         # PURE: normalize + category match + vegan rules + shop resolver (no HA import)
+│       ├── default_map.json       # shipped seed taxonomy + shops (0.4.0+; data, not code)
+│       ├── frontend.py            # serve bundled card + register sidebar panel
+│       ├── repairs.py             # source-missing repair issue
 │       ├── store.py               # HA Store wrapper for CategoryMap (categories, overrides, shops, shop_overrides) + migration
 │       ├── models.py              # dataclasses (SourceItem, CategorisedItem, Category, Shop, ...)
 │       ├── sensor.py              # the categorised sensor entity
@@ -23,7 +26,7 @@ hashoppinglist/
 │           └── en.json
 ├── frontend/
 │   └── alexa-shopping-categoriser-card/
-│       ├── src/                   # card source (TS/JS)
+│       ├── src/                   # card source (JS): card, settings-panel, tick-controller, …
 │       ├── dist/                  # built asset served by the integration
 │       └── package.json
 ├── tests/
@@ -56,7 +59,9 @@ hashoppinglist/
 | `config_flow.py` | Select source entity; options (grace, toggles) | HA config entries, const |
 | `coordinator.py` | Read source items; call categoriser; hold projection | categoriser, store, models |
 | `categoriser.py` | Pure category pipeline + vegan rules **+ shop resolver** (whole-word matching) | models only |
-| `store.py` | Persist/load/migrate CategoryMap (categories, overrides, **shops, shop_overrides**) | HA Store, models |
+| `store.py` | Persist/load/migrate CategoryMap (categories, overrides, **shops, shop_overrides**, seed_version); v1→v2 re-seed | HA Store, models, defaults |
+| `defaults.py` | Load the shipped `default_map.json` seed (defensive) | default_map.json, models |
+| `default_map.json` | Shipped seed taxonomy + shops (editable in a release) | — |
 | `models.py` | Shared dataclasses/types (incl. `Shop`) | — |
 | `sensor.py` | Expose projection as attributes; availability | coordinator |
 | `services.py` | Category **and shop** maintenance + learning services | store, coordinator, const |
