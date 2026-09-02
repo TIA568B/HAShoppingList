@@ -166,12 +166,20 @@ function setText(el, value) {
 }
 
 // Prevent keystrokes typed into a form field from bubbling out of the card and triggering
-// Home Assistant's global keyboard shortcuts (e.g. "c" quick-bar, "e", "a"). HA listens for
-// these on document; without this, typing a category/shop name fires shortcuts and the
-// field is unusable. We stop propagation but do NOT preventDefault, so normal typing works.
+// Home Assistant's global keyboard shortcuts (e.g. "c" quick-bar, "e", "a"). HA registers a
+// shortcut listener on `window` (tinykeys, via ShortcutManager); without this, typing a
+// category/shop/item name fires those shortcuts and the field is unusable.
+//
+// We register in the CAPTURE phase (as well as bubble) and use stopImmediatePropagation so
+// the event never reaches HA's window-level listener regardless of which phase HA listens in.
+// A plain bubble-phase stopPropagation is not enough if HA ever listens in the capture phase
+// (the event would reach window before our handler ran). We deliberately do NOT call
+// preventDefault, so the keystroke still lands in the input as normal text.
 function stopKeyboardPropagation(el) {
+  const swallow = (e) => e.stopImmediatePropagation();
   for (const type of ["keydown", "keyup", "keypress"]) {
-    el.addEventListener(type, (e) => e.stopPropagation());
+    el.addEventListener(type, swallow, { capture: true });
+    el.addEventListener(type, swallow);
   }
 }
 

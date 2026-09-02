@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-09-02
+
+### Fixed
+- **Typing in the card's "Add an item" box no longer triggers Home Assistant's global
+  keyboard shortcuts** (e.g. `c`/`e`/`a` opening the quick-bar/assist), which had made the
+  field effectively unusable. The keystroke guard now swallows key events in the **capture
+  phase** as well as the bubble phase (using `stopImmediatePropagation`), so the event never
+  reaches HA's `window`-level shortcut listener regardless of which phase it listens in. It
+  still does not `preventDefault`, so normal typing works. Card bundle rebuilt into `www/`.
+  No backend or sensor-contract change.
+
 ## [0.9.1] - 2026-09-02
 
 ### Changed
