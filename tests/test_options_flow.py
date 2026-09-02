@@ -49,6 +49,48 @@ async def test_init_is_a_menu(hass: HomeAssistant, loaded: MockConfigEntry) -> N
     }
 
 
+def _selection_options(result: dict) -> list[str]:
+    """Extract the ordered 'selection' choices from a manage_* form's schema."""
+    schema = result["data_schema"].schema
+    for key, validator in schema.items():
+        if getattr(key, "schema", None) == "selection":
+            # The value is a vol.In(choices); its .container preserves dict order.
+            return list(validator.container)
+    raise AssertionError("no 'selection' field in schema")
+
+
+async def test_manage_categories_list_is_alphabetical(
+    hass: HomeAssistant, loaded: MockConfigEntry
+) -> None:
+    result = await hass.config_entries.options.async_init(loaded.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "manage_categories"}
+    )
+    assert result["type"] is FlowResultType.FORM
+    options = _selection_options(result)
+    # The "(Add new category)" sentinel is pinned last; the rest are case-insensitive sorted.
+    assert options[-1] == "__add_new__"
+    categories = options[:-1]
+    assert categories == sorted(categories, key=str.casefold)
+    # Sanity: a couple of known seed categories are present and correctly ordered.
+    assert "Bakery" in categories and "Sauces" in categories
+    assert categories.index("Bakery") < categories.index("Sauces")
+
+
+async def test_manage_shops_list_is_alphabetical(
+    hass: HomeAssistant, loaded: MockConfigEntry
+) -> None:
+    result = await hass.config_entries.options.async_init(loaded.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "manage_shops"}
+    )
+    assert result["type"] is FlowResultType.FORM
+    options = _selection_options(result)
+    assert options[-1] == "__add_new__"
+    shops = options[:-1]
+    assert shops == sorted(shops, key=str.casefold)
+
+
 async def test_add_category_via_flow(hass: HomeAssistant, loaded: MockConfigEntry) -> None:
     # init -> manage_categories (select "add new") -> edit_category form
     result = await hass.config_entries.options.async_init(loaded.entry_id)

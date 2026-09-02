@@ -241,7 +241,9 @@ class AlexaShoppingOptionsFlow(OptionsFlow):
             self._selected = user_input["selection"]
             return await self.async_step_edit_category()
 
-        names = [c.name for c in coordinator.store.category_map.categories]
+        names = sorted(
+            (c.name for c in coordinator.store.category_map.categories), key=str.casefold
+        )
         choices = {name: name for name in names}
         choices[_ADD_NEW] = "(Add new category)"
         schema = vol.Schema({vol.Required("selection"): vol.In(choices)})
@@ -322,7 +324,7 @@ class AlexaShoppingOptionsFlow(OptionsFlow):
             self._selected = user_input["selection"]
             return await self.async_step_edit_shop()
 
-        names = [s.name for s in coordinator.store.category_map.shops]
+        names = sorted((s.name for s in coordinator.store.category_map.shops), key=str.casefold)
         choices = {name: name for name in names}
         choices[_ADD_NEW] = "(Add new shop)"
         schema = vol.Schema({vol.Required("selection"): vol.In(choices)})

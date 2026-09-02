@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-09-02
+
+### Changed
+- **Options flow "Manage categories" and "Manage shops" pick-lists are now sorted alphabetically**
+  (case-insensitive), instead of stored/seed order, making a category or shop easier to find when
+  editing. The "(Add new …)" entry stays pinned last. This affects the selection lists only; the
+  stored map order, the sensor's `category_definitions`/`shop_definitions` contract, and the card's
+  grouped view are unchanged.
+
 ## [0.8.0] - 2026-09-02
 
 ### Added
