@@ -44,6 +44,16 @@
       ]
     },
     {
+      "name": "Alcohol",
+      "keywords": [
+        "alcohol-free lager", "low alcohol wine", "red wine", "white wine",
+        "rose wine", "sparkling wine", "wine", "lager", "bitter", "stout",
+        "cider", "prosecco", "champagne", "gin", "vodka", "whisky", "whiskey",
+        "rum", "brandy", "sherry", "port", "baileys", "vermouth",
+        "cognac", "liqueur", "aperol", "campari"
+      ]
+    },
+    {
       "name": "Drinks",
       "keywords": [
         "juice", "squash", "coffee", "tea", "ice tea", "iced tea",
@@ -63,10 +73,7 @@
         "orange juice", "apple juice", "cranberry juice", "pineapple juice",
         "tomato juice", "smoothie", "coconut water", "energy drink",
         "sports drink", "sparkling water", "still water", "spring water",
-        "lager", "bitter", "ale", "stout", "cider", "red wine", "white wine",
-        "rose wine", "sparkling wine", "prosecco", "champagne", "gin", "vodka",
-        "whisky", "rum", "brandy", "sherry", "port", "baileys", "vermouth",
-        "alcohol-free lager", "low alcohol wine", "cream soda",
+        "cream soda",
         "dandelion and burdock", "cherryade", "vimto", "ribena", "robinsons",
         "irn-bru", "lucozade", "shloer", "elderflower presse", "kombucha",
         "ginger shot", "wheatgrass shot", "protein shake",

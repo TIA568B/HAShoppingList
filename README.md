@@ -126,17 +126,18 @@ npm run build`, then copy `dist/alexa-shopping-categoriser-card.js` into
 ## Categorisation rules (vegan by design)
 
 The primary user is vegan, so the default taxonomy assumes plant-based products. The shipped
-default categories, **in match order**, are: **Canned Food, Frozen, Sauces, Drinks, Fruit & Veg,
-Milk, Chilled, Fake Meat, Baby, Bakery, Pantry, Household, Herbs & Spices, Baking, Cereals,
-Snacks, Health & Beauty, Medicine, Pets** (plus the implicit **Uncategorised** bucket). Key
-rules:
+default categories, **in match order**, are: **Canned Food, Frozen, Sauces, Alcohol, Drinks,
+Fruit & Veg, Milk, Chilled, Fake Meat, Baby, Bakery, Pantry, Household, Herbs & Spices, Baking,
+Cereals, Snacks, Health & Beauty, Medicine, Pets** (plus the implicit **Uncategorised** bucket).
+Key rules:
 
 | Item text matches… | Category | Assumption |
 | --- | --- | --- |
 | tinned/canned goods (`tinned …`, `canned …`, `tin of …`, `baked beans`, `mushy peas`) | **Canned Food** | — |
 | frozen items (`frozen …`, `ice cream`, `sorbet`, `oven chips`, `pizza`) | **Frozen** | — |
 | sauces/condiments (`sauce`, `ketchup`, `mayo`, `chutney`, `mustard`, `pesto`, `jam`, `vinegar`) | **Sauces** | — |
-| drinks (`juice`, `squash`, `tea`, `coffee`, soft drinks, `wine`, `lager`, …) | **Drinks** | — |
+| alcohol (`wine`, `lager`, `cider`, `gin`, `vodka`, `whisky`, `prosecco`, low/no-alcohol) | **Alcohol** | — |
+| soft drinks (`juice`, `squash`, `tea`, `coffee`, `cola`, `ginger beer`/`ale`) | **Drinks** | — |
 | produce (`apple`, `carrot`, `cucumber`, `garlic`, `aubergine`, `kale`, …) | **Fruit & Veg** | — |
 | milk keywords (`milk`, `oat milk`, `soy/soya milk`, `almond milk`, `oat drink`) | **Milk** | plant-based milk |
 | dairy-style (`cheese`, `yogurt`/`yoghurt`, `butter`, `cream`, `tofu`, `cheddar`, `feta`) | **Chilled** | plant-based |

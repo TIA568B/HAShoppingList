@@ -6,6 +6,30 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-09-02
+
+### Added
+- **New "Alcohol" category.** Beer, wine, spirits and liqueurs now group under Alcohol instead of
+  being mixed in with soft drinks in Drinks — matching how shops shelve them. Includes the
+  low/no-alcohol variants (`alcohol-free lager`, `low alcohol wine`), which live in the same
+  aisle. Also seeds a few common extras: `whiskey`, `cognac`, `liqueur`, `aperol`, `campari`.
+  Alcohol is evaluated before Drinks so `low alcohol wine` / `alcohol-free lager` resolve to
+  Alcohol rather than a bare `wine`/`lager` match.
+
+### Changed
+- **Moved all alcoholic drinks out of Drinks into Alcohol** (`lager`, `bitter`, `stout`, `cider`,
+  `red/white/rose/sparkling wine`, `wine`, `prosecco`, `champagne`, `gin`, `vodka`, `whisky`,
+  `rum`, `brandy`, `sherry`, `port`, `baileys`, `vermouth`).
+
+### Notes
+- Deliberately **no bare `beer`/`ale` keyword** in Alcohol: those would hijack the soft drinks
+  `ginger beer` and `ginger ale` (which stay in Drinks) under the whole-word, first-match-wins
+  engine. Specific beers still match via `lager`/`stout`/`bitter`/`cider`; correct any other via
+  the card's pencil. Wine/cider vinegars stay in Sauces (evaluated before Alcohol).
+- Seed-only change: no store schema or sensor attribute contract change. Existing installs keep
+  their stored map and learned corrections; use **Reload defaults** (Options flow) to adopt the
+  new category.
+
 ## [0.8.1] - 2026-09-02
 
 ### Changed

@@ -100,6 +100,28 @@ def test_categorise_override_wins() -> None:
     assert categorise(normalize("birthday candles"), CATS, overrides) == "Household"
 
 
+def test_alcohol_category() -> None:
+    # Alcoholic drinks route to Alcohol (evaluated before Drinks), including the low/no
+    # alcohol variants which are shelved in the same aisle.
+    for raw in (
+        "lager",
+        "red wine",
+        "prosecco",
+        "gin",
+        "whisky",
+        "cider",
+        "stout",
+        "alcohol-free lager",
+        "low alcohol wine",
+    ):
+        assert categorise(normalize(raw), CATS, {}) == "Alcohol"
+    # Soft drinks that merely contain a beer/ale word stay in Drinks (no bare beer/ale
+    # keyword in Alcohol), and wine/cider vinegars stay in Sauces.
+    assert categorise(normalize("ginger beer"), CATS, {}) == "Drinks"
+    assert categorise(normalize("ginger ale"), CATS, {}) == "Drinks"
+    assert categorise(normalize("cider vinegar"), CATS, {}) == "Sauces"
+
+
 def test_canned_marker_wins_over_food_inside() -> None:
     # An explicit tinned/canned marker routes to Canned Food regardless of the food, and
     # beats broad produce keywords ("tomatoes", "peaches") that appear earlier by name.
