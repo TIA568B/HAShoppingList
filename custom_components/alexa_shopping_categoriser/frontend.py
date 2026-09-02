@@ -1,8 +1,10 @@
-"""Register and serve the bundled Lovelace card.
+"""Register and serve the bundled Lovelace card and sidebar panel.
 
 Serves the built card asset from the integration so users do not hand-install JS, and
 adds it as an extra module URL cache-busted by the integration version (finding
-REVIEW2-004). Registration is idempotent across entries.
+REVIEW2-004). Also registers a dedicated sidebar panel ("Shopping List") that hosts the
+card so the categorised view has a first-class left-nav entry without a Lovelace
+dashboard. Registration is idempotent across entries.
 """
 
 from __future__ import annotations
@@ -18,10 +20,19 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 CARD_FILENAME = "alexa-shopping-categoriser-card.js"
+PANEL_FILENAME = "alexa-shopping-categoriser-panel.js"
 _CARD_URL_BASE = f"/{DOMAIN}/{CARD_FILENAME}"
+_PANEL_URL_BASE = f"/{DOMAIN}/{PANEL_FILENAME}"
 _WWW_DIR = Path(__file__).parent / "www"
 
 _REGISTERED = "frontend_card_registered"
+_PANEL_REGISTERED = "frontend_panel_registered"
+
+# Sidebar panel identity.
+PANEL_URL_PATH = "alexa-shopping-list"
+PANEL_TITLE = "Shopping List"
+PANEL_ICON = "mdi:cart"
+PANEL_COMPONENT_NAME = "alexa-shopping-categoriser-panel"
 
 
 async def async_register_card(hass: HomeAssistant, version: str) -> None:
@@ -64,3 +75,75 @@ async def async_register_card(hass: HomeAssistant, version: str) -> None:
 
     domain_data[_REGISTERED] = True
     _LOGGER.debug("Registered card resource at %s", url)
+
+
+async def async_register_panel(hass: HomeAssistant, version: str) -> None:
+    """Serve the panel module and register the sidebar panel (once).
+
+    Best-effort: any failure here must never block integration setup. The panel hosts the
+    card element and discovers the categorised sensor by its attribute contract.
+    """
+    domain_data = hass.data.setdefault(DOMAIN, {})
+    if domain_data.get(_PANEL_REGISTERED):
+        return
+
+    panel_path = _WWW_DIR / PANEL_FILENAME
+    if not panel_path.is_file():
+        _LOGGER.warning(
+            "Panel asset not found at %s; the sidebar entry will be unavailable. The "
+            "integration and card still work.",
+            panel_path,
+        )
+        return
+
+    try:
+        await hass.http.async_register_static_paths(
+            [
+                StaticPathConfig(
+                    _PANEL_URL_BASE,
+                    str(panel_path),
+                    cache_headers=False,
+                )
+            ]
+        )
+
+        from homeassistant.components import frontend
+
+        frontend.async_register_built_in_panel(
+            hass,
+            component_name="custom",
+            sidebar_title=PANEL_TITLE,
+            sidebar_icon=PANEL_ICON,
+            frontend_url_path=PANEL_URL_PATH,
+            require_admin=False,
+            config={
+                "_panel_custom": {
+                    "name": PANEL_COMPONENT_NAME,
+                    "embed_iframe": False,
+                    "trust_external": False,
+                    # Cache-bust with the integration version so panel updates land.
+                    "module_url": f"{_PANEL_URL_BASE}?v={version}",
+                },
+            },
+        )
+    except Exception as err:
+        _LOGGER.warning("Could not register the sidebar panel: %s", err)
+        return
+
+    domain_data[_PANEL_REGISTERED] = True
+    _LOGGER.debug("Registered sidebar panel at /%s", PANEL_URL_PATH)
+
+
+def async_remove_panel(hass: HomeAssistant) -> None:
+    """Remove the sidebar panel when the last entry unloads."""
+    domain_data = hass.data.get(DOMAIN, {})
+    if not domain_data.get(_PANEL_REGISTERED):
+        return
+    try:
+        from homeassistant.components import frontend
+
+        frontend.async_remove_panel(hass, PANEL_URL_PATH)
+    except Exception as err:
+        _LOGGER.debug("Could not remove sidebar panel: %s", err)
+        return
+    domain_data[_PANEL_REGISTERED] = False

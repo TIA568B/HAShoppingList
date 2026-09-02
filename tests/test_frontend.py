@@ -71,3 +71,83 @@ async def test_register_card_missing_asset_is_noop(
 
     register.assert_not_awaited()
     assert not hass.data.get(DOMAIN, {}).get("frontend_card_registered")
+
+
+async def test_register_panel_registers_sidebar_panel(hass: HomeAssistant) -> None:
+    from custom_components.alexa_shopping_categoriser.frontend import (
+        PANEL_TITLE,
+        PANEL_URL_PATH,
+        async_register_panel,
+    )
+
+    registered: list[dict] = []
+
+    def _fake_register(_hass, **kwargs):
+        registered.append(kwargs)
+
+    with (
+        patch.object(hass.http, "async_register_static_paths", AsyncMock()),
+        patch(
+            "homeassistant.components.frontend.async_register_built_in_panel",
+            side_effect=_fake_register,
+        ),
+    ):
+        await async_register_panel(hass, "1.2.3")
+
+    assert len(registered) == 1
+    kwargs = registered[0]
+    assert kwargs["frontend_url_path"] == PANEL_URL_PATH
+    assert kwargs["sidebar_title"] == PANEL_TITLE
+    assert kwargs["component_name"] == "custom"
+    assert "v=1.2.3" in kwargs["config"]["_panel_custom"]["module_url"]
+    assert hass.data[DOMAIN]["frontend_panel_registered"] is True
+
+
+async def test_register_panel_is_idempotent(hass: HomeAssistant) -> None:
+    from custom_components.alexa_shopping_categoriser.frontend import async_register_panel
+
+    register = AsyncMock()
+    with (
+        patch.object(hass.http, "async_register_static_paths", register),
+        patch("homeassistant.components.frontend.async_register_built_in_panel"),
+    ):
+        await async_register_panel(hass, "1.0.0")
+        await async_register_panel(hass, "1.0.0")
+
+    assert register.await_count == 1
+
+
+async def test_register_panel_missing_asset_is_noop(
+    hass: HomeAssistant, tmp_path, monkeypatch
+) -> None:
+    import custom_components.alexa_shopping_categoriser.frontend as fe
+
+    monkeypatch.setattr(fe, "_WWW_DIR", tmp_path)
+    register = AsyncMock()
+    with patch.object(hass.http, "async_register_static_paths", register):
+        await fe.async_register_panel(hass, "1.0.0")
+
+    register.assert_not_awaited()
+    assert not hass.data.get(DOMAIN, {}).get("frontend_panel_registered")
+
+
+async def test_remove_panel_calls_frontend_remove(hass: HomeAssistant) -> None:
+    from custom_components.alexa_shopping_categoriser.frontend import (
+        PANEL_URL_PATH,
+        async_register_panel,
+        async_remove_panel,
+    )
+
+    with (
+        patch.object(hass.http, "async_register_static_paths", AsyncMock()),
+        patch("homeassistant.components.frontend.async_register_built_in_panel"),
+    ):
+        await async_register_panel(hass, "1.0.0")
+
+    with patch(
+        "homeassistant.components.frontend.async_remove_panel"
+    ) as remove:
+        async_remove_panel(hass)
+
+    remove.assert_called_once_with(hass, PANEL_URL_PATH)
+    assert hass.data[DOMAIN]["frontend_panel_registered"] is False
