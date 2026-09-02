@@ -6,6 +6,29 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-09-02
+
+### Added
+- **New "Canned Food" category.** Tinned/canned goods now group under Canned Food instead of
+  Pantry. It is evaluated **first** (before every other category) because an explicit
+  `tinned`/`canned`/`tin of`/`can of` marker is the strongest signal and must win over the food
+  inside — e.g. "tinned tomatoes" and "canned tomatoes" are Canned Food, not Fruit & Veg via the
+  bare `tomatoes` keyword. Also seeds `baked beans`, `spaghetti hoops`, `mushy peas`, and
+  `tinned/canned/condensed soup`.
+
+### Changed
+- **`tinned` moved from Pantry to Canned Food.** All "tinned X" items follow it. Dried/dry-packed
+  pulses without a canned marker (`chickpeas`, `lentils`, `beans`) intentionally **stay in
+  Pantry**, since they are sold both ways; add "tinned"/"canned" to route a specific item to
+  Canned Food.
+
+### Notes
+- Seed-only change: no store schema or sensor attribute contract change. Existing installs keep
+  their stored map and learned corrections; use **Reload defaults** (Options flow) to adopt the
+  new category. **Learned per-item overrides still win over the seed** — if an item was manually
+  assigned to Pantry (or any category) previously, Reload defaults keeps that assignment; correct
+  it from the card's pencil or `recategorise_item`.
+
 ## [0.7.0] - 2026-09-02
 
 ### Added

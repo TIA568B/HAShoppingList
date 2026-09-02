@@ -24,17 +24,21 @@ def test_default_map_json_is_valid_and_shaped() -> None:
 
 def test_loads_expected_taxonomy() -> None:
     cat_names = [c.name for c in default_categories()]
-    # Order matters and is significant (first-match-wins). Specific multi-word
+    # Order matters and is significant (first-match-wins). Specific, marker-driven
     # categories are evaluated before broad bare-word ones:
+    #  - Canned Food is first: an explicit "tinned"/"canned" marker is the strongest
+    #    signal and must win over the food inside (e.g. "tinned tomatoes" is Canned
+    #    Food, not Fruit & Veg via "tomatoes").
     #  - Sauces must precede Chilled (salad cream vs bare "cream").
     #  - Sauces/Drinks/Frozen must precede Fruit & Veg so multi-word items like
     #    "tomato ketchup", "apple juice" and "vanilla ice cream" win over bare
     #    produce/fruit keywords ("tomato", "apple", "strawberry").
     assert cat_names.index("Sauces") < cat_names.index("Chilled")
-    for specific in ("Sauces", "Drinks", "Frozen"):
+    for specific in ("Canned Food", "Sauces", "Drinks", "Frozen"):
         assert cat_names.index(specific) < cat_names.index("Fruit & Veg")
-    assert cat_names[0] == "Frozen"
-    for expected in ("Sauces", "Baby", "Frozen", "Fake Meat"):
+    assert cat_names.index("Canned Food") < cat_names.index("Pantry")
+    assert cat_names[0] == "Canned Food"
+    for expected in ("Canned Food", "Sauces", "Baby", "Frozen", "Fake Meat"):
         assert expected in cat_names
     # No stale "Produce".
     assert "Produce" not in cat_names

@@ -2,6 +2,13 @@
   "seed_version": 1,
   "categories": [
     {
+      "name": "Canned Food",
+      "keywords": [
+        "tinned", "canned", "tin of", "can of", "baked beans", "spaghetti hoops",
+        "mushy peas", "condensed soup", "tinned soup", "canned soup"
+      ]
+    },
+    {
       "name": "Frozen",
       "keywords": [
         "frozen peas", "vegan ice cream", "oven chips", "pizza",
@@ -173,7 +180,7 @@
     {
       "name": "Pantry",
       "keywords": [
-        "pasta", "rice", "lentils", "beans", "chickpeas", "olives", "tinned",
+        "pasta", "rice", "lentils", "beans", "chickpeas", "olives",
         "passata", "tomato puree", "coconut milk", "coconut cream", "spaghetti",
         "penne", "fusilli", "tagliatelle", "macaroni", "lasagne sheets",
         "egg noodles", "rice noodles", "basmati", "long grain", "brown rice",

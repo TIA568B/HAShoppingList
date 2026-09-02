@@ -126,12 +126,14 @@ npm run build`, then copy `dist/alexa-shopping-categoriser-card.js` into
 ## Categorisation rules (vegan by design)
 
 The primary user is vegan, so the default taxonomy assumes plant-based products. The shipped
-default categories, **in match order**, are: **Frozen, Sauces, Drinks, Fruit & Veg, Milk,
-Chilled, Fake Meat, Baby, Bakery, Pantry, Household, Herbs & Spices, Baking, Cereals, Snacks,
-Health & Beauty, Medicine, Pets** (plus the implicit **Uncategorised** bucket). Key rules:
+default categories, **in match order**, are: **Canned Food, Frozen, Sauces, Drinks, Fruit & Veg,
+Milk, Chilled, Fake Meat, Baby, Bakery, Pantry, Household, Herbs & Spices, Baking, Cereals,
+Snacks, Health & Beauty, Medicine, Pets** (plus the implicit **Uncategorised** bucket). Key
+rules:
 
 | Item text matches… | Category | Assumption |
 | --- | --- | --- |
+| tinned/canned goods (`tinned …`, `canned …`, `tin of …`, `baked beans`, `mushy peas`) | **Canned Food** | — |
 | frozen items (`frozen …`, `ice cream`, `sorbet`, `oven chips`, `pizza`) | **Frozen** | — |
 | sauces/condiments (`sauce`, `ketchup`, `mayo`, `chutney`, `mustard`, `pesto`, `jam`, `vinegar`) | **Sauces** | — |
 | drinks (`juice`, `squash`, `tea`, `coffee`, soft drinks, `wine`, `lager`, …) | **Drinks** | — |
@@ -141,7 +143,7 @@ Health & Beauty, Medicine, Pets** (plus the implicit **Uncategorised** bucket). 
 | meat keywords (`sausages`, `bacon`, `mince`, `chicken`, `steak`, `burgers`, `ham`) | **Fake Meat** | plant-based substitute |
 | baby (`nappies`, `wipes`, `baby food`, `formula`) | **Baby** | — |
 | bread/cakes (`bread`, `bagel`, `croissant`, `scones`, `naan`) | **Bakery** | — |
-| dry goods (`pasta`, `rice`, `lentils`, `beans`, `tinned`, `oil`, `stock cube`) | **Pantry** | — |
+| dry goods (`pasta`, `rice`, `lentils`, `beans`, `oil`, `stock cube`, `passata`) | **Pantry** | — |
 | cleaning/laundry/consumables (`toilet roll`, `bleach`, `bin bags`, `batteries`) | **Household** | — |
 | herbs, spices, salt (`basil`, `paprika`, `cumin`, `sea salt`) | **Herbs & Spices** | — |
 | baking goods (`flour`, `sugar`, `baking powder`, `cocoa powder`, `chocolate chips`, syrups/`treacle`) | **Baking** | — |
@@ -154,11 +156,13 @@ Health & Beauty, Medicine, Pets** (plus the implicit **Uncategorised** bucket). 
 
 Matching is **whole-word** (case-insensitive), so `ham` does not match "graham crackers".
 **Category order is significant** (first match wins), and the defaults put the more specific,
-multi-word categories before the broad bare-word ones. In particular **Frozen, Sauces, and
-Drinks are evaluated before Fruit & Veg** so items like "vanilla ice cream", "tomato ketchup",
-"apple sauce" and "apple juice" resolve to Frozen/Sauces/Drinks rather than being caught by a
-bare produce keyword (`tomato`, `apple`); and **Sauces is before Chilled** so "salad cream" is
-a sauce, not caught by Chilled's bare `cream`. Categorisation is best-effort on text alone;
+marker-driven categories before the broad bare-word ones. **Canned Food is evaluated first**, so
+an explicit "tinned"/"canned" marker wins over the food inside (e.g. "tinned tomatoes" is Canned
+Food, not Fruit & Veg via `tomatoes`). Likewise **Frozen, Sauces, and Drinks are evaluated before
+Fruit & Veg** so items like "vanilla ice cream", "tomato ketchup", "apple sauce" and "apple
+juice" resolve to Frozen/Sauces/Drinks rather than being caught by a bare produce keyword
+(`tomato`, `apple`); and **Sauces is before Chilled** so "salad cream" is a sauce, not caught by
+Chilled's bare `cream`. Categorisation is best-effort on text alone;
 ambiguous items go to **Uncategorised** rather than being mis-assigned. Correct any item from
 the card's pencil (or the `recategorise_item` service) and the choice is remembered for future
 identical items.

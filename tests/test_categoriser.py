@@ -100,6 +100,24 @@ def test_categorise_override_wins() -> None:
     assert categorise(normalize("birthday candles"), CATS, overrides) == "Household"
 
 
+def test_canned_marker_wins_over_food_inside() -> None:
+    # An explicit tinned/canned marker routes to Canned Food regardless of the food, and
+    # beats broad produce keywords ("tomatoes", "peaches") that appear earlier by name.
+    for raw in (
+        "tinned tomatoes",
+        "canned tomatoes",
+        "tinned peaches",
+        "tin of beans",
+        "tinned chickpeas",
+        "baked beans",
+        "spaghetti hoops",
+    ):
+        assert categorise(normalize(raw), CATS, {}) == "Canned Food"
+    # Dried/dry pulses without a canned marker stay in Pantry.
+    for raw in ("chickpeas", "lentils", "kidney beans"):
+        assert categorise(normalize(raw), CATS, {}) == "Pantry"
+
+
 def test_categorise_override_beats_keyword() -> None:
     overrides = {"oat milk": "Pantry"}
     assert categorise(normalize("oat milk"), CATS, overrides) == "Pantry"
