@@ -348,9 +348,22 @@ class TickController {
 const SUPPORTED_ATTRIBUTES_VERSION = 3;
 const INTEGRATION_DOMAIN = "alexa_shopping_categoriser";
 
-// Card build version — kept in step with manifest.json. Shown in a small footer so a
-// deployed/cached-stale card is obvious at a glance (deploy verification).
-const CARD_VERSION = "0.5.0";
+// Card build version, shown in a small footer so a deployed/cached-stale card is obvious
+// at a glance (deploy verification). It is NOT hard-coded: the integration serves this
+// module cache-busted with `?v=<manifest version>` (see frontend.py), so we read that same
+// query off our own module URL. This guarantees the footer always reflects the version HA
+// actually served. If the module was somehow loaded without the query (e.g. hand-added to a
+// dashboard with a bare path), CARD_VERSION is null and the footer is omitted rather than
+// showing a misleading fixed number.
+function versionFromUrl(moduleUrl) {
+  try {
+    return new URL(moduleUrl).searchParams.get("v");
+  } catch (_err) {
+    return null;
+  }
+}
+
+const CARD_VERSION = versionFromUrl(import.meta.url);
 
 class AlexaShoppingCategoriserCard extends HTMLElement {
   constructor() {
@@ -548,10 +561,12 @@ class AlexaShoppingCategoriserCard extends HTMLElement {
       container.appendChild(this._msg("Your shopping list is empty."));
     }
 
-    const footer = document.createElement("div");
-    footer.className = "asc-version";
-    setText(footer, `v${CARD_VERSION}`);
-    container.appendChild(footer);
+    if (CARD_VERSION) {
+      const footer = document.createElement("div");
+      footer.className = "asc-version";
+      setText(footer, `v${CARD_VERSION}`);
+      container.appendChild(footer);
+    }
   }
 
   _msg(text) {

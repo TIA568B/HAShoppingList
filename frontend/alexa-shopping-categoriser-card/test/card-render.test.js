@@ -221,10 +221,26 @@ test("ticking an item is unaffected by the pencil affordance", () => {
 
 // --- version footer (deploy verification) --------------------------------
 
-test("card renders a version footer matching CARD_VERSION", async () => {
+test("version is derived from the module URL's ?v query, not hard-coded", async () => {
+  const { versionFromUrl } = await import("../src/card.js");
+  // Served form (frontend.py adds ?v=<manifest version>).
+  assert.equal(versionFromUrl("http://ha.local/alexa_shopping_categoriser/card.js?v=0.6.0"), "0.6.0");
+  assert.equal(versionFromUrl("http://ha.local/card.js?v=1.2.3&foo=bar"), "1.2.3");
+  // Bare path (no cache-bust query) -> null, so the footer is omitted rather than lying.
+  assert.equal(versionFromUrl("http://ha.local/card.js"), null);
+  assert.equal(versionFromUrl("not a url"), null);
+});
+
+test("card shows a version footer when served with a version, omits it otherwise", async () => {
   const { CARD_VERSION } = await import("../src/card.js");
-  const card = mountCard(makeHassWithItem([]));
+  const card = mountCard(makeHass([]));
   const footer = card.shadowRoot.byClass("asc-version")[0];
-  assert.ok(footer, "version footer present");
-  assert.equal(footer.text(), `v${CARD_VERSION}`);
+  if (CARD_VERSION) {
+    assert.ok(footer, "version footer present when a version is known");
+    assert.equal(footer.text(), `v${CARD_VERSION}`);
+  } else {
+    // In the test harness the module is loaded from a bare file:// URL (no ?v=),
+    // so CARD_VERSION is null and the footer must be omitted.
+    assert.equal(footer, undefined, "footer omitted when version is unknown");
+  }
 });

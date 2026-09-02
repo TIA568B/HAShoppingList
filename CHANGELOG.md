@@ -6,6 +6,23 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-09-02
+
+### Fixed
+- **Card version footer is now dynamic, not hard-coded.** It previously showed a fixed
+  `CARD_VERSION` string that had to be bumped by hand and had drifted (stuck at `v0.5.0`),
+  defeating its purpose as a deploy-verification signal. The card now derives the version from
+  the cache-busting `?v=` query on its own module URL (which the integration sets from
+  `manifest.json`), so the footer always reflects the exact build Home Assistant served. If the
+  module is ever loaded without that query (e.g. a hand-added bare path), the footer is omitted
+  rather than showing a misleading number.
+
+### Docs
+- README categorisation section updated for the 0.6.0 taxonomy: all 18 default categories,
+  the new match order (specific multi-word categories before broad bare-word ones), and the
+  worked examples (ice cream → Frozen, tomato ketchup / apple sauce → Sauces, apple juice →
+  Drinks).
+
 ## [0.6.0] - 2026-09-02
 
 ### Added

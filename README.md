@@ -110,8 +110,10 @@ The card renders **shop → category → items**. You can:
 - **Collapse/expand** each shop and each category independently, or **Focus** a shop to collapse
   the others. Groups with **no remaining items are hidden**.
 
-A small **version footer** (e.g. `v0.5.0`) shows at the bottom of the card — handy for
-confirming an update actually loaded after a HACS upgrade.
+A small **version footer** (e.g. `v0.6.0`) shows at the bottom of the card — handy for
+confirming an update actually loaded after a HACS upgrade. The number is **not hard-coded**: the
+card reports the exact version Home Assistant served it as (from the cache-busting `?v=` on its
+own module URL, which comes from `manifest.json`), so it always reflects the running build.
 
 > After updating via HACS, restart Home Assistant and **hard-refresh** the browser (or reopen
 > the mobile app). If the version footer still shows the old number, the new card hasn't loaded
@@ -124,23 +126,39 @@ npm run build`, then copy `dist/alexa-shopping-categoriser-card.js` into
 ## Categorisation rules (vegan by design)
 
 The primary user is vegan, so the default taxonomy assumes plant-based products. The shipped
-default categories are: **Fruit & Veg, Milk, Sauces, Chilled, Fake Meat, Baby, Bakery, Frozen,
-Drinks, Pantry, Household** (plus the implicit **Uncategorised** bucket). Key rules:
+default categories, **in match order**, are: **Frozen, Sauces, Drinks, Fruit & Veg, Milk,
+Chilled, Fake Meat, Baby, Bakery, Pantry, Household, Herbs & Spices, Baking, Cereals, Snacks,
+Health & Beauty, Medicine, Pets** (plus the implicit **Uncategorised** bucket). Key rules:
 
 | Item text matches… | Category | Assumption |
 | --- | --- | --- |
-| produce (`apple`, `carrot`, `cucumber`, `garlic`, …) | **Fruit & Veg** | — |
+| frozen items (`frozen …`, `ice cream`, `sorbet`, `chips`, `pizza`) | **Frozen** | — |
+| sauces/condiments (`sauce`, `ketchup`, `mayo`, `chutney`, `mustard`, `pesto`, `jam`, `vinegar`) | **Sauces** | — |
+| drinks (`juice`, `squash`, `tea`, `coffee`, soft drinks, `wine`, `lager`, …) | **Drinks** | — |
+| produce (`apple`, `carrot`, `cucumber`, `garlic`, `aubergine`, `kale`, …) | **Fruit & Veg** | — |
 | milk keywords (`milk`, `oat milk`, `soy/soya milk`, `almond milk`, `oat drink`) | **Milk** | plant-based milk |
-| sauces (`sauce`, `teriyaki`, `ketchup`, `mayo`, `mango chutney`, `salad cream`, `pesto`) | **Sauces** | — |
-| dairy-style (`cheese`, `yogurt`/`yoghurt`, `butter`, `cream`, `tofu`) | **Chilled** | plant-based |
-| meat keywords (`sausages`, `bacon`, `mince`, `chicken`, `burgers`, `ham`) | **Fake Meat** | plant-based substitute |
+| dairy-style (`cheese`, `yogurt`/`yoghurt`, `butter`, `cream`, `tofu`, `cheddar`, `feta`) | **Chilled** | plant-based |
+| meat keywords (`sausages`, `bacon`, `mince`, `chicken`, `steak`, `burgers`, `ham`) | **Fake Meat** | plant-based substitute |
 | baby (`nappies`, `wipes`, `baby food`, `formula`) | **Baby** | — |
-| `pizza`, `chips`, `frozen peas`, vegan ice cream | **Frozen** | — |
-| egg / fish / clearly animal-derived, or no match | **Uncategorised** | manual review — never guessed |
+| bread/cakes (`bread`, `bagel`, `croissant`, `scones`, `naan`) | **Bakery** | — |
+| dry goods (`pasta`, `rice`, `lentils`, `beans`, `tinned`, `oil`, `stock cube`) | **Pantry** | — |
+| cleaning/laundry/consumables (`toilet roll`, `bleach`, `bin bags`, `batteries`) | **Household** | — |
+| herbs, spices, salt (`basil`, `paprika`, `cumin`, `sea salt`) | **Herbs & Spices** | — |
+| baking goods (`flour`, `sugar`, `baking powder`, `cocoa powder`, `chocolate chips`) | **Baking** | — |
+| breakfast cereal + seeds (`cornflakes`, `porridge oats`, `granola`, `chia seeds`) | **Cereals** | — |
+| snacks/biscuits/sweets/nuts (`crisps`, `chocolate`, `biscuits`, `almonds`, dried fruit) | **Snacks** | — |
+| toiletries (`shampoo`, `toothpaste`, `deodorant`, `razors`) | **Health & Beauty** | — |
+| medicines/vitamins (`paracetamol`, `ibuprofen`, `multivitamins`, `plasters`) | **Medicine** | — |
+| pet supplies (`dog food`, `cat food`, `cat litter`, `bird seed`) | **Pets** | — |
+| egg / honey / fish / clearly animal-derived, or no match | **Uncategorised** | manual review — never guessed |
 
-Matching is **whole-word** (case-insensitive), so `ham` does not match "graham crackers"
-and `tea` does not match "steak". `Sauces` is evaluated before `Chilled` so "salad cream" is a
-sauce, not caught by Chilled's bare `cream`. Categorisation is best-effort on text alone;
+Matching is **whole-word** (case-insensitive), so `ham` does not match "graham crackers".
+**Category order is significant** (first match wins), and the defaults put the more specific,
+multi-word categories before the broad bare-word ones. In particular **Frozen, Sauces, and
+Drinks are evaluated before Fruit & Veg** so items like "vanilla ice cream", "tomato ketchup",
+"apple sauce" and "apple juice" resolve to Frozen/Sauces/Drinks rather than being caught by a
+bare produce keyword (`tomato`, `apple`); and **Sauces is before Chilled** so "salad cream" is
+a sauce, not caught by Chilled's bare `cream`. Categorisation is best-effort on text alone;
 ambiguous items go to **Uncategorised** rather than being mis-assigned. Correct any item from
 the card's pencil (or the `recategorise_item` service) and the choice is remembered for future
 identical items.

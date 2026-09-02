@@ -1,6 +1,6 @@
 [project]
 name = "alexa_shopping_categoriser"
-version = "0.6.0"
+version = "0.6.1"
 description = "Home Assistant custom integration presenting the Alexa shopping list grouped by shop and category."
 requires-python = ">=3.13"
 
