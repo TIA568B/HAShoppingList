@@ -35,13 +35,13 @@ projection, always rebuildable from the Alexa list plus your saved category and 
 ### Via HACS (recommended)
 
 1. Add this repository as a HACS custom repository (category: Integration).
-   Repository URL: `https://bitbucket.org/tia568b/hashoppinglist/`
+   Repository: `TIA568B/HAShoppingList` (or the URL `https://github.com/TIA568B/HAShoppingList`).
 2. Install "Alexa Shopping List Categoriser".
 3. Restart Home Assistant.
 
-> Note: HACS's one-click "Open in HACS" My-button only resolves **GitHub** repositories, so
-> there is no HACS button here — this project is hosted on Bitbucket. Add it as a custom
-> repository using the URL above.
+> Note: this project is developed on Bitbucket and mirrored to GitHub at
+> [`TIA568B/HAShoppingList`](https://github.com/TIA568B/HAShoppingList) because HACS only
+> resolves **GitHub** repositories. Add it via the GitHub repository above.
 
 ### Manual
 
