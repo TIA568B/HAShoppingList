@@ -37,6 +37,9 @@ fileMatchPattern: '**/*.md'
 - Maintain a `CHANGELOG.md` once implementation starts (Keep a Changelog format, semver).
 - Any config-entry or stored-data schema change requires an `async_migrate_entry` note in the
   changelog and a migration test.
+- The **release/versioning flow** (how a change reaches a running HA instance via HACS: bump
+  `manifest.json`, sync `pyproject.toml` + changelog, then `scripts/release.sh`) is canonical
+  in `release-and-deployment.md` — follow it, do not restate it here.
 
 ## File granularity
 

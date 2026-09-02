@@ -16,6 +16,13 @@ Follow current (2025-2026) Home Assistant core integration conventions.
   components), `codeowners`, `config_flow: true`, `iot_class: calculated`,
   `integration_type: service`, `dependencies: ["todo"]`, and `requirements` (keep empty if
   no third-party libs are needed — prefer stdlib).
+- The sidebar panel needs `frontend`/`panel_custom` at runtime. Declare these as
+  **`after_dependencies: ["frontend", "panel_custom"]`**, not hard `dependencies`: they must
+  not become a hard setup requirement (it breaks the test harness, which has no
+  `hass_frontend`). Panel registration is best-effort and guarded, and ensures `panel_custom`
+  is set up at runtime itself.
+- Bumping `manifest.json` `version` is how a change reaches HACS users — see the canonical
+  release flow in `release-and-deployment.md`. Editing the workspace alone ships nothing.
 - Config-entry only. Do not support YAML configuration.
 
 ## Async requirements
