@@ -5,9 +5,9 @@
   "codeowners": ["@davidcarson"],
   "config_flow": true,
   "dependencies": ["todo"],
-  "documentation": "https://bitbucket.org/tia568b/hashoppinglist/",
+  "documentation": "https://github.com/TIA568B/HAShoppingList",
   "iot_class": "calculated",
   "integration_type": "service",
-  "issue_tracker": "https://bitbucket.org/tia568b/hashoppinglist/issues",
+  "issue_tracker": "https://github.com/TIA568B/HAShoppingList/issues",
   "requirements": []
 }
