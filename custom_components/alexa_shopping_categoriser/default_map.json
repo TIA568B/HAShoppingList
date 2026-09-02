@@ -2,9 +2,74 @@
   "seed_version": 1,
   "categories": [
     {
+      "name": "Frozen",
+      "keywords": [
+        "frozen peas", "vegan ice cream", "chips", "pizza",
+        "frozen sweetcorn", "frozen mixed vegetables", "frozen chips",
+        "frozen roast potatoes", "frozen mash", "frozen spinach", "frozen berries",
+        "frozen mixed berries", "frozen sliced bread", "frozen pastry",
+        "frozen shortcrust pastry", "frozen puff pastry", "frozen filo pastry",
+        "frozen pizza", "frozen garlic bread", "frozen fish fingers",
+        "frozen prawns", "frozen chicken nuggets", "frozen burgers",
+        "frozen sausage rolls", "frozen yorkshire puddings", "ice lollies",
+        "sorbet", "frozen yoghurt", "ice cream", "vanilla ice cream",
+        "chocolate ice cream", "strawberry ice cream"
+      ]
+    },
+    {
+      "name": "Sauces",
+      "keywords": [
+        "sauce", "teriyaki", "teriyaki sauce", "soy sauce", "soya sauce",
+        "ketchup", "mayo", "mayonnaise", "mango chutney", "chutney",
+        "salad cream", "pesto",
+        "sriracha", "tabasco", "salsa", "guacamole", "houmous", "hummus",
+        "tzatziki", "tahini", "harissa", "harissa paste", "mustard",
+        "english mustard", "dijon", "wholegrain mustard", "piccalilli",
+        "branston pickle", "pickled onions", "gherkins", "capers",
+        "sun-dried tomatoes", "red pesto", "tikka masala paste", "curry paste",
+        "thai green curry paste", "thai red curry paste", "wasabi",
+        "wasabi paste", "miso", "miso paste", "peanut butter", "almond butter",
+        "cashew butter", "nutella", "chocolate spread", "marmalade", "jam",
+        "strawberry jam", "raspberry jam", "blackcurrant jam", "apricot jam",
+        "lemon curd", "vinegar", "balsamic vinegar", "red wine vinegar",
+        "white wine vinegar", "malt vinegar", "cider vinegar", "rice vinegar",
+        "mirin"
+      ]
+    },
+    {
+      "name": "Drinks",
+      "keywords": [
+        "juice", "squash", "coffee", "tea", "ice tea", "iced tea",
+        "instant coffee", "ground coffee", "coffee beans", "decaf coffee",
+        "cafetiere", "filter coffee", "espresso pods", "coffee capsules",
+        "hot chocolate", "drinking chocolate", "english breakfast tea",
+        "builders tea", "yorkshire tea", "pg tips", "earl grey", "darjeeling",
+        "assam", "green tea", "sencha", "matcha", "peppermint tea", "camomile tea",
+        "chamomile tea", "rooibos", "redbush", "nettle tea", "fruit tea",
+        "berry tea", "fennel tea", "white tea", "oolong", "jasmine tea",
+        "liquorice tea", "dandelion tea", "hibiscus tea", "decaf tea",
+        "loose leaf tea", "tea bags", "chai", "masala chai", "turmeric tea",
+        "ginger tea", "sleepy time tea", "detox tea", "lapsang souchong",
+        "fizzy drinks", "lemonade", "cola", "diet cola", "ginger beer",
+        "ginger ale", "tonic water", "soda water", "orange squash",
+        "blackcurrant squash", "elderflower cordial", "fruit juice",
+        "orange juice", "apple juice", "cranberry juice", "pineapple juice",
+        "tomato juice", "smoothie", "coconut water", "energy drink",
+        "sports drink", "sparkling water", "still water", "spring water",
+        "lager", "bitter", "ale", "stout", "cider", "red wine", "white wine",
+        "rose wine", "sparkling wine", "prosecco", "champagne", "gin", "vodka",
+        "whisky", "rum", "brandy", "sherry", "port", "baileys", "vermouth",
+        "alcohol-free lager", "low alcohol wine", "cream soda",
+        "dandelion and burdock", "cherryade", "vimto", "ribena", "robinsons",
+        "irn-bru", "lucozade", "shloer", "elderflower presse", "kombucha",
+        "ginger shot", "wheatgrass shot", "protein shake",
+        "meal replacement shake", "apple and blackcurrant"
+      ]
+    },
+    {
       "name": "Fruit & Veg",
       "keywords": [
-        "apple", "banana", "carrot", "carrots", "lettuce", "onion", "onions",
+        "apple", "apples", "banana", "carrot", "carrots", "lettuce", "onion", "onions",
         "cucumber", "garlic", "tomato", "tomatoes", "potato", "potatoes",
         "pepper", "peppers", "mushroom", "mushrooms", "spinach", "broccoli",
         "aubergine", "courgette", "swede", "mangetout", "rocket", "spring onion",
@@ -50,26 +115,6 @@
         "milk", "oat milk", "soy milk", "soya milk", "almond milk", "oat drink",
         "semi-skimmed milk", "skimmed milk", "whole milk", "full fat milk",
         "gold top milk", "uht milk", "coconut milk drink", "rice milk"
-      ]
-    },
-    {
-      "name": "Sauces",
-      "keywords": [
-        "sauce", "teriyaki", "teriyaki sauce", "soy sauce", "soya sauce",
-        "ketchup", "mayo", "mayonnaise", "mango chutney", "chutney",
-        "salad cream", "pesto",
-        "sriracha", "tabasco", "salsa", "guacamole", "houmous", "hummus",
-        "tzatziki", "tahini", "harissa", "harissa paste", "mustard",
-        "english mustard", "dijon", "wholegrain mustard", "piccalilli",
-        "branston pickle", "pickled onions", "gherkins", "capers",
-        "sun-dried tomatoes", "red pesto", "tikka masala paste", "curry paste",
-        "thai green curry paste", "thai red curry paste", "wasabi",
-        "wasabi paste", "miso", "miso paste", "peanut butter", "almond butter",
-        "cashew butter", "nutella", "chocolate spread", "marmalade", "jam",
-        "strawberry jam", "raspberry jam", "blackcurrant jam", "apricot jam",
-        "lemon curd", "vinegar", "balsamic vinegar", "red wine vinegar",
-        "white wine vinegar", "malt vinegar", "cider vinegar", "rice vinegar",
-        "mirin"
       ]
     },
     {
@@ -123,50 +168,6 @@
         "scones", "fruit scones", "battenberg", "bakewell", "lemon drizzle",
         "carrot cake", "fruit cake", "swiss roll", "angel cake", "rock cakes",
         "mince pies", "victoria sponge", "millionaire's shortbread", "bagels"
-      ]
-    },
-    {
-      "name": "Frozen",
-      "keywords": [
-        "frozen peas", "vegan ice cream", "chips", "pizza",
-        "frozen sweetcorn", "frozen mixed vegetables", "frozen chips",
-        "frozen roast potatoes", "frozen mash", "frozen spinach", "frozen berries",
-        "frozen mixed berries", "frozen sliced bread", "frozen pastry",
-        "frozen shortcrust pastry", "frozen puff pastry", "frozen filo pastry",
-        "frozen pizza", "frozen garlic bread", "frozen fish fingers",
-        "frozen prawns", "frozen chicken nuggets", "frozen burgers",
-        "frozen sausage rolls", "frozen yorkshire puddings", "ice lollies",
-        "sorbet", "frozen yoghurt"
-      ]
-    },
-    {
-      "name": "Drinks",
-      "keywords": [
-        "juice", "squash", "coffee", "tea", "ice tea", "iced tea",
-        "instant coffee", "ground coffee", "coffee beans", "decaf coffee",
-        "cafetiere", "filter coffee", "espresso pods", "coffee capsules",
-        "hot chocolate", "drinking chocolate", "english breakfast tea",
-        "builders tea", "yorkshire tea", "pg tips", "earl grey", "darjeeling",
-        "assam", "green tea", "sencha", "matcha", "peppermint tea", "camomile tea",
-        "chamomile tea", "rooibos", "redbush", "nettle tea", "fruit tea",
-        "berry tea", "fennel tea", "white tea", "oolong", "jasmine tea",
-        "liquorice tea", "dandelion tea", "hibiscus tea", "decaf tea",
-        "loose leaf tea", "tea bags", "chai", "masala chai", "turmeric tea",
-        "ginger tea", "sleepy time tea", "detox tea", "lapsang souchong",
-        "fizzy drinks", "lemonade", "cola", "diet cola", "ginger beer",
-        "ginger ale", "tonic water", "soda water", "orange squash",
-        "blackcurrant squash", "elderflower cordial", "fruit juice",
-        "orange juice", "apple juice", "cranberry juice", "pineapple juice",
-        "tomato juice", "smoothie", "coconut water", "energy drink",
-        "sports drink", "sparkling water", "still water", "spring water",
-        "lager", "bitter", "ale", "stout", "cider", "red wine", "white wine",
-        "rose wine", "sparkling wine", "prosecco", "champagne", "gin", "vodka",
-        "whisky", "rum", "brandy", "sherry", "port", "baileys", "vermouth",
-        "alcohol-free lager", "low alcohol wine", "cream soda",
-        "dandelion and burdock", "cherryade", "vimto", "ribena", "robinsons",
-        "irn-bru", "lucozade", "shloer", "elderflower presse", "kombucha",
-        "ginger shot", "wheatgrass shot", "protein shake",
-        "meal replacement shake", "apple and blackcurrant"
       ]
     },
     {
@@ -260,7 +261,7 @@
         "digestive biscuits", "rich tea biscuits", "hobnobs", "ginger nuts",
         "bourbon", "custard creams", "shortbread", "garibaldi", "nice biscuits",
         "chocolate digestives", "cream crackers", "water biscuits", "oatcakes",
-        "ritz crackers", "breadsticks", "biscuits", "crackers", "dark chocolate",
+        "ritz crackers", "breadsticks", "biscuits", "dark chocolate",
         "milk chocolate", "white chocolate", "cadbury dairy milk", "galaxy",
         "toblerone", "kit kat", "twix", "mars bar", "snickers", "wispa", "aero",
         "flake", "crunchie", "maltesers", "minstrels", "smarties", "rolos",

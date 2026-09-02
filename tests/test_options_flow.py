@@ -60,11 +60,11 @@ async def test_add_category_via_flow(hass: HomeAssistant, loaded: MockConfigEntr
     )
     assert result["type"] is FlowResultType.FORM
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], {"name": "Snacks", "keywords": "crisps, nuts"}
+        result["flow_id"], {"name": "Treats", "keywords": "crisps, nuts"}
     )
     # Returns to the menu after applying.
     assert result["type"] is FlowResultType.MENU
-    cat = next(c for c in _map(loaded).categories if c.name == "Snacks")
+    cat = next(c for c in _map(loaded).categories if c.name == "Treats")
     assert cat.keywords == ["crisps", "nuts"]
 
 

@@ -6,6 +6,39 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-02
+
+### Added
+- **Large default-taxonomy expansion.** `default_map.json` now seeds a much broader UK
+  grocery vocabulary across existing categories (Fruit & Veg, Milk, Sauces, Chilled, Fake
+  Meat, Baby, Bakery, Frozen, Drinks, Pantry, Household) so common items categorise on first
+  sight.
+- **Seven new default categories:** Herbs & Spices, Baking, Cereals, Snacks, Health & Beauty,
+  Medicine, and Pets.
+
+### Changed
+- **Category match order: specific multi-word categories now run before broad bare-word ones.**
+  `Frozen`, `Sauces`, and `Drinks` are evaluated before `Fruit & Veg` (and `Sauces` still before
+  `Chilled`). Under the engine's whole-word, first-match-wins semantics this makes multi-word
+  items resolve correctly instead of being hijacked by a bare produce/dairy keyword:
+  - `vanilla ice cream` / `strawberry ice cream` / `frozen yoghurt` → **Frozen** (not Chilled's
+    `cream`/`yoghurt` or Fruit & Veg's `strawberry`).
+  - `tomato ketchup` / `tomato sauce` / `apple sauce` / `mango chutney` → **Sauces** (not Fruit &
+    Veg's `tomato`/`apple`/`mango`).
+  - `tomato juice` / `apple juice` / `cranberry juice` → **Drinks**.
+  Produce, dairy, and meat are unaffected (verified: `strawberries`/`broad beans` → Fruit & Veg,
+  `double cream`/`cheddar cheese` → Chilled, `chicken breast` → Fake Meat). Two deliberate
+  gray-area outcomes: `tomato puree` → Fruit & Veg and `coconut milk` → Milk (the latter matches
+  the vegan "milk-keyword → Milk" rule).
+- Added `apples` (plural) to Fruit & Veg so both singular and plural resolve.
+
+### Notes
+- Seed-only change: no store schema change (still `schema_version` 2) and no sensor attribute
+  contract change (`attributes_version` 3). Existing installs keep their stored map and
+  learned corrections; use **Reload defaults** (Options flow) to pick up the new taxonomy.
+- Vegan boundary preserved: eggs, honey, fish/seafood, offal, and gelatine-risk sweets are
+  intentionally left uncategorised for manual review rather than guessed.
+
 ## [0.5.0] - 2026-09-02
 
 ### Changed

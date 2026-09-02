@@ -69,10 +69,10 @@ def test_normalize_bare_quantity_kept() -> None:
         ("sausages", "Fake Meat"),
         ("free range eggs", UNCATEGORISED),
         ("honey", UNCATEGORISED),
-        ("birthday candles", UNCATEGORISED),
+        ("birthday candles", "Household"),  # "candles" is a Household keyword
+        ("steak", "Fake Meat"),  # explicit meat keyword (assumed plant-based)
         # whole-word protection
         ("graham crackers", UNCATEGORISED),  # not Fake Meat via "ham"
-        ("steak", UNCATEGORISED),  # not Drinks via "tea"
         ("rollmop", UNCATEGORISED),  # not Bakery via "roll"
         ("bread", "Bakery"),
         ("carrots", "Fruit & Veg"),

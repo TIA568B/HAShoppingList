@@ -101,10 +101,10 @@ async def test_recategorise_unknown_category_raises(
 async def test_add_category_and_duplicate(
     hass: HomeAssistant, loaded_entry: MockConfigEntry
 ) -> None:
-    await _call(hass, SERVICE_ADD_CATEGORY, {ATTR_NAME: "Snacks", ATTR_KEYWORDS: ["crisps"]})
-    assert any(c.name == "Snacks" for c in _map(loaded_entry).categories)
+    await _call(hass, SERVICE_ADD_CATEGORY, {ATTR_NAME: "Treats", ATTR_KEYWORDS: ["crisps"]})
+    assert any(c.name == "Treats" for c in _map(loaded_entry).categories)
     with pytest.raises(ServiceValidationError):
-        await _call(hass, SERVICE_ADD_CATEGORY, {ATTR_NAME: "snacks"})  # case-insensitive dup
+        await _call(hass, SERVICE_ADD_CATEGORY, {ATTR_NAME: "treats"})  # case-insensitive dup
 
 
 async def test_edit_category_rename_migrates_overrides(
