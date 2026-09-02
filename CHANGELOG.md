@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.9.4] - 2026-09-02
+
+### Changed
+- **The shop "Focus" button is now a toggle.** Focusing a shop still collapses every other
+  shop so you can concentrate on the store you're in, but when a shop is already the only one
+  expanded the button reads **"Show all"** and expands every shop again. Previously Focus only
+  ever collapsed the others, with no way to reverse it from the button, so it was a one-way
+  trip. Also fixed a related issue where tapping Focus (nested in the shop header) also toggled
+  the header's own collapse. Card bundle rebuilt into `www/`. No backend or sensor-contract
+  change.
+
 ## [0.9.3] - 2026-09-02
 
 ### Fixed

@@ -153,6 +153,30 @@ class CollapseState {
       this._shops.set(name, name !== focusShop);
     }
   }
+
+  // True when `focusShop` is the only expanded shop (i.e. it is currently focused): it is
+  // expanded and every other shop is collapsed. `autoHints` maps shopName -> server hint so
+  // shops the user hasn't manually toggled are judged by their effective state.
+  isShopFocused(focusShop, allShopNames, autoHints = {}) {
+    let sawFocus = false;
+    for (const name of allShopNames) {
+      const collapsed = this.isShopCollapsed(name, !!autoHints[name]);
+      if (name === focusShop) {
+        if (collapsed) return false; // the focused shop must itself be expanded
+        sawFocus = true;
+      } else if (!collapsed) {
+        return false; // some other shop is still expanded => not focused
+      }
+    }
+    return sawFocus;
+  }
+
+  // Expand every shop ("show all") — clears a previous focus.
+  expandAll(allShopNames) {
+    for (const name of allShopNames) {
+      this._shops.set(name, false);
+    }
+  }
 }
 
 // Safe text helpers. The card NEVER injects raw user text as HTML; it uses
@@ -574,10 +598,14 @@ class AlexaShoppingCategoriserCard extends HTMLElement {
       );
     }
     const allShopNames = groups.map((g) => g.name);
+    // Server auto-collapse hints per shop, so Focus's toggle can judge effective state for
+    // shops the user hasn't manually toggled.
+    const shopAutoHints = {};
+    for (const g of groups) shopAutoHints[g.name] = !!g.collapsed;
 
     let renderedShops = 0;
     for (const shop of groups) {
-      const el = this._renderShop(shop, grace, allShopNames);
+      const el = this._renderShop(shop, grace, allShopNames, shopAutoHints);
       if (el !== null) {
         container.appendChild(el);
         renderedShops += 1;
@@ -687,7 +715,7 @@ class AlexaShoppingCategoriserCard extends HTMLElement {
     }
   }
 
-  _renderShop(shop, grace, allShopNames) {
+  _renderShop(shop, grace, allShopNames, shopAutoHints = {}) {
     const section = document.createElement("section");
     section.className = "asc-shop";
 
@@ -707,12 +735,26 @@ class AlexaShoppingCategoriserCard extends HTMLElement {
     });
     section.appendChild(header);
 
+    // Focus is a toggle: focus this shop (collapse the rest), and if it is already the only
+    // expanded shop, tapping again expands everything ("Show all"). Without the toggle there
+    // was no way to undo a focus from the button — the other shops stayed collapsed.
+    const isFocused = this._collapse.isShopFocused(shop.name, allShopNames, shopAutoHints);
     const focus = document.createElement("button");
     focus.className = "asc-focus";
-    setText(focus, "Focus");
-    focus.setAttribute("aria-label", `Focus ${shop.name}`);
-    focus.addEventListener("click", () => {
-      this._collapse.focusShop(shop.name, allShopNames);
+    setText(focus, isFocused ? "Show all" : "Focus");
+    focus.setAttribute(
+      "aria-label",
+      isFocused ? "Show all shops" : `Focus ${shop.name}`,
+    );
+    focus.setAttribute("aria-pressed", String(isFocused));
+    focus.addEventListener("click", (e) => {
+      // Don't let the click also toggle the header's collapse.
+      e.stopPropagation();
+      if (isFocused) {
+        this._collapse.expandAll(allShopNames);
+      } else {
+        this._collapse.focusShop(shop.name, allShopNames);
+      }
       this._render();
     });
     header.appendChild(focus);
