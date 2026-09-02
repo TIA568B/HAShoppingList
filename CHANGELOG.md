@@ -6,6 +6,20 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-02
+
+### Added
+- Dedicated **"Shopping List"** sidebar panel (left-nav entry, cart icon) that hosts the
+  bundled card, so the categorised view is reachable without adding the card to a dashboard.
+  Registered via `panel_custom` and served by the integration, cache-busted by version. The
+  panel auto-discovers the categorised sensor by its attribute contract.
+
+### Changed
+- `manifest.json` gains `after_dependencies: ["frontend", "panel_custom"]` so the panel can
+  register at runtime without making the frontend a hard setup dependency.
+
+## [0.1.0] - 2026-08-XX
+
 ### Added
 - Initial implementation of the `alexa_shopping_categoriser` custom integration:
   - Config flow selecting an Alexa Devices `todo` list as the source (one entry per list),
