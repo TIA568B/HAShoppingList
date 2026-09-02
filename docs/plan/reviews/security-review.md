@@ -32,11 +32,20 @@ expires 2036) and is transmitted over **plaintext HTTP**. This is a real, exploi
 credential exposure that directly contradicts the project's own security steering ("stores
 **no** Amazon/Alexa credentials … never in files under the integration folder").
 
-Mitigating context (which lowers blast radius but does **not** clear the finding): the file
-is **not** committed to git and never was — `.kiro/settings/` is in `.gitignore` and the token
-does not appear anywhere in git history. The exposure is therefore a **local workstation /
-developer-config exposure**, not a public source-control leak. It is still a full-access
-credential sitting in cleartext on disk with an excessive lifetime, and it must be rotated.
+Mitigating context: the file is **not** committed to git and never was — `.kiro/settings/`
+is in `.gitignore` and the token does not appear anywhere in git history. The exposure is
+therefore a **local workstation / developer-config exposure**, not a public source-control
+leak.
+
+**Risk acceptance (2026-09-02, project owner):** this is the dev environment for AI-assisted
+coding, and `.kiro/settings/mcp.json` is what wires the Home Assistant MCP server into that
+workflow. The owner has **explicitly accepted this risk** on the condition that the secret
+stays confined to the local machine. Given the token is gitignored, absent from git history,
+and used only for local tooling, that is a reasonable acceptance. The finding is therefore
+recorded as **Accepted risk** rather than a blocker. The two residual concerns that are least
+"local-only" are noted as non-blocking recommendations: the ~10-year token lifetime (matters
+if the machine is backed up/synced/imaged) and the plaintext-HTTP transport (SEC-002, exposes
+the token on the LAN).
 
 ### Findings by severity
 
@@ -59,26 +68,35 @@ credential sitting in cleartext on disk with an excessive lifetime, and it must 
 
 ### Is it safe to proceed?
 
-The **integration code** is safe to proceed to release. The **repository as it currently
-sits on disk is not**, because of the exposed credential. The blocking issue (SEC-001) is an
-operational/configuration problem that is fixed by rotating the token and keeping it out of a
-plaintext file — it requires **no application code change**. Once SEC-001 is remediated, the
-project is GO.
+Yes. The **shipped integration and card** have no blocking security issues. The one CRITICAL
+finding (SEC-001) is a **local dev-environment credential** that the project owner has
+formally **risk-accepted** on the condition it stays on the local machine — a reasonable call
+given it is gitignored, absent from git history, and used solely to wire the Home Assistant
+MCP server into an AI-assisted coding workflow. It requires **no application code change** and
+does not affect anything the integration ships to end users. With that risk accepted, the
+remaining findings are LOW/INFO and acceptable for the project's intended risk level.
 
 ---
 
 ## Security Decision
 
-# NO-GO
+# GO (conditional)
 
-**Reason:** One CRITICAL finding is open — a confirmed, live, full-access Home Assistant
-long-lived access token stored in plaintext in the workspace (`.kiro/settings/mcp.json`),
-over a plaintext-HTTP endpoint, with a ~10-year lifetime. A fundamental control (secret
-protection at rest / least-privilege credential lifetime) is missing for that credential.
+**Condition:** SEC-001 (the plaintext Home Assistant token in `.kiro/settings/mcp.json`) is
+**risk-accepted by the project owner** for the local dev environment, on the explicit
+condition that the secret remains confined to the local machine. If that file is ever
+committed, synced, backed up, shared, or otherwise leaves the machine, this finding reverts
+to **CRITICAL / NO-GO** and the token must be revoked immediately.
 
-This is a **configuration/operational** blocker, not a defect in the shipped integration.
-The integration and card themselves would be **GO**. Rotate the token and remove it from the
-plaintext config (see P0 below); after that, this review flips to GO.
+**Rationale:** The shipped integration and card carry no blocking security issues — no
+injection, XSS, SSRF, broken authorization, unsafe deserialization, or vulnerable dependency
+was found. SEC-001 is a developer-tooling configuration item, not a defect in the product, and
+is contained (gitignored, never in history, local-only use). The owner has accepted it with a
+clear boundary.
+
+**Non-blocking recommendations (owner's discretion):** shorten the token lifetime (it is
+currently ~10 years, which matters mainly if the machine is backed up or imaged), and move the
+MCP endpoint to HTTPS (SEC-002) so the bearer token is not sent in clear over the LAN.
 
 ---
 
@@ -86,7 +104,7 @@ plaintext config (see P0 below); after that, this review flips to GO.
 
 | ID | Severity | Area | Finding | Exploitability | Status |
 | -- | -------- | ---- | ------- | -------------- | ------ |
-| SEC-001 | CRITICAL | Secrets / Config | Live full-access HA long-lived token in plaintext `.kiro/settings/mcp.json` | Confirmed (token validated live via read-only API call) | Open |
+| SEC-001 | CRITICAL | Secrets / Config | Live full-access HA long-lived token in plaintext `.kiro/settings/mcp.json` | Confirmed (token validated live via read-only API call) | Accepted risk (local dev only) |
 | SEC-002 | MEDIUM | Transport / Config | HA MCP endpoint uses plaintext `http://` (token sent in clear) | Requires local-network position | Open |
 | SEC-003 | LOW | Authorization | Integration services are admin/service-level with no finer authZ | Requires an authenticated HA user with service access | Accepted risk |
 | SEC-004 | LOW | DoS / Resource | Unbounded count of categories/shops/keywords and override-map growth | Requires an authenticated user; local-only impact | Open |
@@ -190,9 +208,26 @@ plaintext workspace file. Compounded by an excessive token lifetime and a non-TL
   `detect-secrets`) that fails on JWT-shaped strings and on `HA_TOKEN=` assignments anywhere
   in the tree, including ignored-but-present config paths that get bundled into support
   archives. Verify `.kiro/settings/` is never added to git.
-- Manually verify the old token returns HTTP 401 after rotation.
+- If the token is ever rotated, verify the old token returns HTTP 401.
 
-**Status:** Open (blocking)
+**Risk Acceptance**
+
+The project owner has **accepted this risk** on 2026-09-02. Context: this is the local
+dev environment for AI-assisted coding, and `.kiro/settings/mcp.json` is the mechanism that
+connects the Home Assistant MCP server into that workflow. The acceptance is bounded by an
+explicit condition — **the secret must stay confined to the local machine**. The exposure is
+already contained: the file is gitignored, never entered git history, and is used only for
+local tooling.
+
+**Acceptance is void** (and this finding reverts to CRITICAL / NO-GO) if any of the following
+occur: the file is committed to a repository, synced to cloud storage, included in a backup or
+disk image that leaves the machine, shared in a support/diagnostic bundle, or the machine is
+otherwise exposed to another party. In any of those cases, revoke the token immediately.
+
+Non-blocking hardening the owner may still choose to apply: shorten the token lifetime (~10
+years today) and move the endpoint to HTTPS (SEC-002).
+
+**Status:** Accepted risk (local dev environment; conditions above)
 
 ---
 
@@ -534,9 +569,10 @@ integration.
 **Recommended Remediation**
 
 Treat the workspace `.kiro/settings/mcp.json` credential as in-scope for security going
-forward; resolve SEC-001. The integration-level PASS claims stand.
+forward. SEC-001 has since been **risk-accepted** by the owner for the local dev environment
+(conditional on the secret staying local). The integration-level PASS claims stand.
 
-**Status:** Open (challenge recorded)
+**Status:** Resolved (scope gap noted; SEC-001 risk-accepted)
 
 ---
 
@@ -586,12 +622,16 @@ Each claim from `docs/plans/10-...md` and the TDA review, checked against the im
 
 ### P0 — Immediate (blocks GO)
 
-- **SEC-001:** Revoke/rotate the exposed HA long-lived token now; stop storing it in a
-  plaintext workspace file; reissue short-lived and least-privilege; audit backups/sync copies.
+- None open. **SEC-001** is **risk-accepted** for the local dev environment (see the finding
+  and the Security Decision). It becomes P0 again only if the token leaves the machine (commit,
+  sync, backup, share), in which case: revoke immediately.
 
-### P1 — High priority (before production/daily use)
+### P1 — High priority (owner's discretion; non-blocking under the accepted risk)
 
-- **SEC-002:** Move the MCP HA endpoint to HTTPS so the bearer token is not sent in clear.
+- **SEC-001 (residual):** shorten the token lifetime from ~10 years to something short-lived,
+  limiting exposure if the machine is ever backed up or imaged.
+- **SEC-002:** Move the MCP HA endpoint to HTTPS so the bearer token is not sent in clear over
+  the LAN.
 
 ### P2 — Medium priority (normal hardening)
 
@@ -620,7 +660,7 @@ Each claim from `docs/plans/10-...md` and the TDA review, checked against the im
 | SSRF | Yes | No | High | No outbound calls, no user URLs, no webhooks. |
 | CSRF | Yes | No | Medium | Actions go through HA's authenticated service/WS APIs; no custom state-changing HTTP endpoint. |
 | XSS | Yes | No | High | `setText`/`textContent` for all user text; no `innerHTML` with user data; no `eval`. |
-| Secrets | Yes | **CRITICAL (SEC-001)** | Confirmed | Live full-access HA token in plaintext `.kiro/settings/mcp.json`. Not in git, but present on disk. |
+| Secrets | Yes | CRITICAL (SEC-001) — risk-accepted | Confirmed | Live full-access HA token in plaintext `.kiro/settings/mcp.json`. Not in git; local dev tooling only. Owner-accepted, conditional on staying local. |
 | Cryptography | Yes | No | Medium | No custom crypto; token is HA-issued. SEC-002 is transport (plaintext HTTP). |
 | Dependencies | Yes | No | High | Runtime `requirements: []`; frontend dev-deps pinned + lockfile. |
 | Supply chain | Yes | Info (SEC-007/008) | Medium | `www/`↔`dist/` currently identical but no CI integrity link; floating Python CI tools. |
@@ -633,7 +673,7 @@ Each claim from `docs/plans/10-...md` and the TDA review, checked against the im
 | Error handling | Yes | No | High | Narrow excepts; low-level errors wrapped as `HomeAssistantError`/`UpdateFailed`; degrades to `Uncategorised`. |
 | DoS / resource exhaustion | Yes | Low (SEC-004) | Medium | Unbounded map/keyword/override growth; local, authenticated-only impact. |
 | Business logic | Yes | No | High | Derived projection, rebuildable; deletes reassign (never drop items); vegan boundary enforced by whole-word matching. |
-| Configuration | Yes | **CRITICAL (SEC-001)** + Medium (SEC-002) | Confirmed | Workspace MCP config is where the real risk lives. |
+| Configuration | Yes | CRITICAL (SEC-001, risk-accepted) + Medium (SEC-002) | Confirmed | Workspace MCP config is where the risk lives; owner-accepted for local dev, conditional on staying local. |
 | Monitoring | Yes | No | Medium | Repair issue on missing source entity; standard HA logbook/history for actions. |
 
 ---
@@ -664,8 +704,9 @@ Each claim from `docs/plans/10-...md` and the TDA review, checked against the im
    confirming safe DOM writes rather than assuming.
 8. **Every CRITICAL/HIGH has clear remediation** — Yes: SEC-001 has a concrete P0 plan (no
    HIGH findings).
-9. **Explicit decision provided** — Yes: **NO-GO** (until SEC-001 is remediated; the shipped
-   integration alone would be GO).
+9. **Explicit decision provided** — Yes: **GO (conditional)**. SEC-001 is risk-accepted by the
+   owner for the local dev environment, conditional on the secret staying on the machine; it
+   reverts to NO-GO if the token ever leaves the machine.
 10. **No unreviewed items claimed as reviewed** — See limitations.
 
 ### Limitations / not exhaustively reviewed
