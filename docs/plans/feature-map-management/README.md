@@ -55,6 +55,11 @@ seed data out of Python into a shipped JSON file, and give the user an explicit
 | 04 | [04-security-and-testing.md](04-security-and-testing.md) | Input validation, XSS, redaction; test matrix additions |
 | 05 | [05-open-questions.md](05-open-questions.md) | Resolved decisions (OQ-A..D), assumptions, risks |
 | 06 | [06-implementation-plan.md](06-implementation-plan.md) | Phased build plan (M1–M6) for 0.4.0 |
+| 07 | [07-native-editing-redesign.md](07-native-editing-redesign.md) | **0.5.0 redesign**: supersedes the inline settings panel with an Options-flow taxonomy editor (B1a) + per-item pencil/tap-to-fix (B2) + card version footer |
+
+> **Note:** `02-card-settings-panels.md` (in-card inline editor) shipped in 0.4.0 but is
+> **superseded by `07`** — the inline form was unusable (HA hotkey capture, clunky on mobile).
+> 0.5.0 removes it in favour of native HA UI.
 
 ## Traceability
 
