@@ -6,52 +6,303 @@
       "keywords": [
         "apple", "banana", "carrot", "carrots", "lettuce", "onion", "onions",
         "cucumber", "garlic", "tomato", "tomatoes", "potato", "potatoes",
-        "pepper", "peppers", "mushroom", "mushrooms", "spinach", "broccoli"
+        "pepper", "peppers", "mushroom", "mushrooms", "spinach", "broccoli",
+        "aubergine", "courgette", "swede", "mangetout", "rocket", "spring onion",
+        "beetroot", "broad beans", "runner beans", "sweetcorn", "marrow",
+        "cos lettuce", "chicory", "little gem", "iceberg", "watercress", "kale",
+        "curly kale", "cavolo nero", "chard", "rainbow chard", "pak choi",
+        "spring greens", "savoy cabbage", "red cabbage", "white cabbage",
+        "brussels sprouts", "cauliflower", "purple sprouting", "tenderstem",
+        "leek", "leeks", "celery", "celeriac", "parsnip", "parsnips",
+        "chantenay", "turnip", "turnips", "radish", "radishes", "fennel",
+        "sugar snap peas", "garden peas", "petit pois", "green beans",
+        "french beans", "butternut squash", "acorn squash", "pumpkin",
+        "sweet potato", "salad potatoes", "jersey royals", "maris piper",
+        "king edward", "baking potatoes", "new potatoes", "cherry tomatoes",
+        "plum tomatoes", "vine tomatoes", "beef tomatoes", "chilli peppers",
+        "scotch bonnet", "chestnut mushrooms", "button mushrooms", "portobello",
+        "shiitake", "garlic bulb", "ginger root", "shallot", "shallots",
+        "red onion", "white onion", "banana shallots", "sweetheart cabbage",
+        "okra", "beansprouts", "mooli", "artichoke", "globe artichoke",
+        "jerusalem artichoke", "kohlrabi", "salsify", "samphire", "bramley",
+        "gala", "cox", "pink lady", "pear", "pears", "conference", "orange",
+        "oranges", "satsuma", "satsumas", "clementine", "clementines",
+        "mandarin", "mandarins", "blood orange", "grapefruit", "lemon",
+        "lemons", "lime", "limes", "grape", "grapes", "seedless grapes",
+        "strawberry", "strawberries", "raspberry", "raspberries", "blackberry",
+        "blackberries", "blueberry", "blueberries", "blackcurrant",
+        "blackcurrants", "redcurrant", "redcurrants", "gooseberry",
+        "gooseberries", "cherry", "cherries", "plum", "plums", "damson",
+        "damsons", "greengage", "greengages", "apricot", "apricots", "peach",
+        "peaches", "nectarine", "nectarines", "melon", "cantaloupe",
+        "honeydew", "watermelon", "galia", "pineapple", "mango", "papaya",
+        "kiwi", "kiwi fruit", "passion fruit", "pomegranate", "fig", "figs",
+        "rhubarb", "star fruit", "dragon fruit", "lychee", "lychees", "guava",
+        "persimmon", "custard apple", "physalis", "cape gooseberries", "quince",
+        "medlar", "medlars", "loganberry", "loganberries", "tayberry",
+        "tayberries", "kumquat", "pomelo", "yuzu", "sharon fruit", "baby corn",
+        "water chestnuts", "bamboo shoots", "edamame"
       ]
     },
     {
       "name": "Milk",
-      "keywords": ["milk", "oat milk", "soy milk", "soya milk", "almond milk", "oat drink"]
+      "keywords": [
+        "milk", "oat milk", "soy milk", "soya milk", "almond milk", "oat drink",
+        "semi-skimmed milk", "skimmed milk", "whole milk", "full fat milk",
+        "gold top milk", "uht milk", "coconut milk drink", "rice milk"
+      ]
     },
     {
       "name": "Sauces",
       "keywords": [
         "sauce", "teriyaki", "teriyaki sauce", "soy sauce", "soya sauce",
         "ketchup", "mayo", "mayonnaise", "mango chutney", "chutney",
-        "salad cream", "pesto"
+        "salad cream", "pesto",
+        "sriracha", "tabasco", "salsa", "guacamole", "houmous", "hummus",
+        "tzatziki", "tahini", "harissa", "harissa paste", "mustard",
+        "english mustard", "dijon", "wholegrain mustard", "piccalilli",
+        "branston pickle", "pickled onions", "gherkins", "capers",
+        "sun-dried tomatoes", "red pesto", "tikka masala paste", "curry paste",
+        "thai green curry paste", "thai red curry paste", "wasabi",
+        "wasabi paste", "miso", "miso paste", "peanut butter", "almond butter",
+        "cashew butter", "nutella", "chocolate spread", "marmalade", "jam",
+        "strawberry jam", "raspberry jam", "blackcurrant jam", "apricot jam",
+        "lemon curd", "vinegar", "balsamic vinegar", "red wine vinegar",
+        "white wine vinegar", "malt vinegar", "cider vinegar", "rice vinegar",
+        "mirin"
       ]
     },
     {
       "name": "Chilled",
-      "keywords": ["cheese", "yogurt", "yogurts", "yoghurt", "yoghurts", "butter", "cream", "tofu"]
+      "keywords": [
+        "cheese", "yogurt", "yogurts", "yoghurt", "yoghurts", "butter", "cream", "tofu",
+        "creme fraiche", "custard", "kefir", "fromage frais", "margarine",
+        "low fat spread", "cheddar", "mild cheddar", "mature cheddar",
+        "red leicester", "double gloucester", "wensleydale", "stilton",
+        "red stilton", "brie", "camembert", "mascarpone", "ricotta",
+        "mozzarella", "feta", "halloumi", "parmesan", "cottage cheese",
+        "tempeh", "vegan cheese", "vegan yoghurt", "vegan butter"
+      ]
     },
     {
       "name": "Fake Meat",
-      "keywords": ["sausages", "bacon", "mince", "chicken", "chicken pieces", "burgers", "ham"]
+      "keywords": [
+        "sausages", "bacon", "mince", "chicken", "chicken pieces", "burgers", "ham",
+        "beef mince", "lamb mince", "pork mince", "turkey mince",
+        "chicken breast", "chicken thighs", "chicken drumsticks", "chicken wings",
+        "whole chicken", "duck breast", "turkey breast", "turkey crown",
+        "gammon", "streaky bacon", "back bacon", "smoked bacon", "unsmoked bacon",
+        "rasher", "pork chops", "pork belly", "pork loin", "pork shoulder",
+        "pork sausages", "cumberland sausages", "lincolnshire sausages",
+        "beef sausages", "vegetarian sausages", "chipolatas", "steak", "sirloin",
+        "rump steak", "rib-eye steak", "fillet steak", "braising steak",
+        "stewing steak", "lamb chops", "lamb shanks", "leg of lamb",
+        "shoulder of lamb", "roast beef", "topside", "silverside", "brisket",
+        "oxtail", "corned beef", "cooked ham", "honey roast ham", "parma ham",
+        "chorizo", "salami", "pepperoni", "quorn", "quorn mince", "quorn fillets",
+        "vegan sausages", "vegan burgers", "plant-based mince", "meat-free bacon",
+        "falafel", "bean curd", "chicken kiev"
+      ]
     },
     {
       "name": "Baby",
-      "keywords": ["nappies", "nappy", "wipes", "baby wipes", "baby food", "formula"]
+      "keywords": [
+        "nappies", "nappy", "wipes", "baby wipes", "baby food", "formula",
+        "baby formula", "baby food pouches", "baby rice", "nappy sacks"
+      ]
     },
     {
       "name": "Bakery",
-      "keywords": ["bread", "bagel", "roll", "sourdough"]
+      "keywords": [
+        "bread", "bagel", "roll", "sourdough",
+        "white bread", "wholemeal bread", "granary bread", "seeded bread",
+        "sourdough bread", "bloomer", "farmhouse loaf", "ciabatta", "baguette",
+        "pitta", "naan", "chapati", "tortilla wraps", "english muffins",
+        "crumpets", "teacakes", "hot cross buns", "croissants", "pain au chocolat",
+        "brioche", "malt loaf", "fruit loaf", "rye bread", "gluten-free bread",
+        "scones", "fruit scones", "battenberg", "bakewell", "lemon drizzle",
+        "carrot cake", "fruit cake", "swiss roll", "angel cake", "rock cakes",
+        "mince pies", "victoria sponge", "millionaire's shortbread", "bagels"
+      ]
     },
     {
       "name": "Frozen",
-      "keywords": ["frozen peas", "vegan ice cream", "chips", "pizza"]
+      "keywords": [
+        "frozen peas", "vegan ice cream", "chips", "pizza",
+        "frozen sweetcorn", "frozen mixed vegetables", "frozen chips",
+        "frozen roast potatoes", "frozen mash", "frozen spinach", "frozen berries",
+        "frozen mixed berries", "frozen sliced bread", "frozen pastry",
+        "frozen shortcrust pastry", "frozen puff pastry", "frozen filo pastry",
+        "frozen pizza", "frozen garlic bread", "frozen fish fingers",
+        "frozen prawns", "frozen chicken nuggets", "frozen burgers",
+        "frozen sausage rolls", "frozen yorkshire puddings", "ice lollies",
+        "sorbet", "frozen yoghurt"
+      ]
     },
     {
       "name": "Drinks",
-      "keywords": ["juice", "squash", "coffee", "tea", "ice tea", "iced tea"]
+      "keywords": [
+        "juice", "squash", "coffee", "tea", "ice tea", "iced tea",
+        "instant coffee", "ground coffee", "coffee beans", "decaf coffee",
+        "cafetiere", "filter coffee", "espresso pods", "coffee capsules",
+        "hot chocolate", "drinking chocolate", "english breakfast tea",
+        "builders tea", "yorkshire tea", "pg tips", "earl grey", "darjeeling",
+        "assam", "green tea", "sencha", "matcha", "peppermint tea", "camomile tea",
+        "chamomile tea", "rooibos", "redbush", "nettle tea", "fruit tea",
+        "berry tea", "fennel tea", "white tea", "oolong", "jasmine tea",
+        "liquorice tea", "dandelion tea", "hibiscus tea", "decaf tea",
+        "loose leaf tea", "tea bags", "chai", "masala chai", "turmeric tea",
+        "ginger tea", "sleepy time tea", "detox tea", "lapsang souchong",
+        "fizzy drinks", "lemonade", "cola", "diet cola", "ginger beer",
+        "ginger ale", "tonic water", "soda water", "orange squash",
+        "blackcurrant squash", "elderflower cordial", "fruit juice",
+        "orange juice", "apple juice", "cranberry juice", "pineapple juice",
+        "tomato juice", "smoothie", "coconut water", "energy drink",
+        "sports drink", "sparkling water", "still water", "spring water",
+        "lager", "bitter", "ale", "stout", "cider", "red wine", "white wine",
+        "rose wine", "sparkling wine", "prosecco", "champagne", "gin", "vodka",
+        "whisky", "rum", "brandy", "sherry", "port", "baileys", "vermouth",
+        "alcohol-free lager", "low alcohol wine", "cream soda",
+        "dandelion and burdock", "cherryade", "vimto", "ribena", "robinsons",
+        "irn-bru", "lucozade", "shloer", "elderflower presse", "kombucha",
+        "ginger shot", "wheatgrass shot", "protein shake",
+        "meal replacement shake", "apple and blackcurrant"
+      ]
     },
     {
       "name": "Pantry",
-      "keywords": ["pasta", "rice", "lentils", "beans", "chickpeas", "olives", "tinned"]
+      "keywords": [
+        "pasta", "rice", "lentils", "beans", "chickpeas", "olives", "tinned",
+        "passata", "tomato puree", "coconut milk", "coconut cream", "spaghetti",
+        "penne", "fusilli", "tagliatelle", "macaroni", "lasagne sheets",
+        "egg noodles", "rice noodles", "basmati", "long grain", "brown rice",
+        "pudding rice", "risotto rice", "arborio", "wild rice", "quinoa",
+        "couscous", "bulgur wheat", "pearl barley", "polenta", "hoisin",
+        "oyster sauce", "worcestershire", "brown sauce", "hp sauce",
+        "horseradish", "mint sauce", "cranberry sauce", "apple sauce",
+        "bread sauce", "black olives", "green olives", "golden syrup",
+        "maple syrup", "treacle", "black treacle", "rapeseed oil", "sunflower oil",
+        "vegetable oil", "olive oil", "extra virgin olive oil", "groundnut oil",
+        "sesame oil", "coconut oil", "stock cube", "chicken stock cube",
+        "beef stock cube", "vegetable stock cube", "bouillon", "gravy granules",
+        "yeast extract", "marmite", "nutritional yeast", "microwave rice",
+        "instant noodles", "pot noodle", "cup a soup", "ramen", "udon", "soba",
+        "rice paper", "spring roll wrappers", "wonton wrappers", "nori", "sake",
+        "kimchi", "sauerkraut", "pickled ginger", "gluten-free pasta",
+        "prawn crackers", "rice crackers", "wasabi peas", "breadcrumbs", "panko"
+      ]
     },
     {
       "name": "Household",
-      "keywords": ["toilet roll", "washing up liquid", "bin bags"]
+      "keywords": [
+        "toilet roll", "washing up liquid", "bin bags",
+        "dishwasher tablets", "rinse aid", "kitchen roll", "tissues",
+        "kitchen cleaner", "bathroom cleaner", "toilet cleaner", "bleach",
+        "limescale remover", "multi-surface cleaner", "glass cleaner",
+        "oven cleaner", "furniture polish", "floor cleaner", "washing up sponges",
+        "scourers", "rubber gloves", "bin liners", "cling film", "tin foil",
+        "baking parchment", "freezer bags", "sandwich bags", "laundry detergent",
+        "washing powder", "washing liquid", "fabric conditioner", "stain remover",
+        "laundry bags", "clothes pegs", "air freshener", "candles", "matches",
+        "firelighters", "batteries", "light bulbs"
+      ]
+    },
+    {
+      "name": "Herbs & Spices",
+      "keywords": [
+        "coriander", "parsley", "flat leaf parsley", "curly parsley", "mint",
+        "basil", "thyme", "rosemary", "sage", "oregano", "marjoram", "tarragon",
+        "dill", "chives", "bay leaves", "lemongrass", "kaffir lime leaves",
+        "chilli flakes", "chilli powder", "paprika", "smoked paprika",
+        "cumin seeds", "ground cumin", "coriander seeds", "ground coriander",
+        "turmeric", "ground ginger", "cinnamon sticks", "ground cinnamon",
+        "nutmeg", "cloves", "star anise", "cardamom", "fennel seeds",
+        "mustard seeds", "caraway seeds", "fenugreek", "garam masala",
+        "curry powder", "mixed spice", "allspice", "saffron", "vanilla pods",
+        "vanilla extract", "black peppercorns", "white pepper", "sea salt",
+        "rock salt", "table salt", "fajita seasoning", "taco seasoning",
+        "cajun seasoning", "jerk seasoning", "chinese five spice",
+        "ras el hanout", "za'atar", "sumac", "baharat", "dukkah",
+        "sichuan peppercorns"
+      ]
+    },
+    {
+      "name": "Baking",
+      "keywords": [
+        "plain flour", "self-raising flour", "wholemeal flour",
+        "strong bread flour", "cornflour", "bicarbonate of soda", "baking powder",
+        "dried yeast", "caster sugar", "granulated sugar", "icing sugar",
+        "demerara", "soft brown sugar", "muscovado", "golden caster sugar",
+        "cocoa powder", "drinking chocolate powder", "spelt flour",
+        "gluten-free flour", "coconut flour", "almond flour", "semolina",
+        "tapioca", "agar agar", "cream of tartar", "xanthan gum", "cocoa nibs",
+        "desiccated coconut", "coconut flakes", "glace cherries", "mixed peel",
+        "marzipan", "fondant icing", "edible glitter", "cake sprinkles",
+        "hundreds and thousands", "food colouring", "piping bags",
+        "cupcake cases", "vanilla essence", "almond essence", "peppermint essence",
+        "rose water", "orange blossom water", "chocolate chips"
+      ]
+    },
+    {
+      "name": "Cereals",
+      "keywords": [
+        "cornflakes", "weetabix", "shredded wheat", "bran flakes", "rice krispies",
+        "porridge oats", "jumbo oats", "granola", "muesli", "coco pops",
+        "frosties", "special k", "all-bran", "instant porridge", "porridge sachets",
+        "chia seeds", "flaxseed", "linseed", "pumpkin seeds", "sunflower seeds",
+        "sesame seeds", "poppy seeds", "wheatgerm", "bran", "oat bran",
+        "cereal bars", "granola bars", "flapjacks"
+      ]
+    },
+    {
+      "name": "Snacks",
+      "keywords": [
+        "digestive biscuits", "rich tea biscuits", "hobnobs", "ginger nuts",
+        "bourbon", "custard creams", "shortbread", "garibaldi", "nice biscuits",
+        "chocolate digestives", "cream crackers", "water biscuits", "oatcakes",
+        "ritz crackers", "breadsticks", "biscuits", "crackers", "dark chocolate",
+        "milk chocolate", "white chocolate", "cadbury dairy milk", "galaxy",
+        "toblerone", "kit kat", "twix", "mars bar", "snickers", "wispa", "aero",
+        "flake", "crunchie", "maltesers", "minstrels", "smarties", "rolos",
+        "polos", "extra strong mints", "chewing gum", "chocolate", "crisps",
+        "ready salted", "salt and vinegar", "cheese and onion", "prawn cocktail",
+        "walkers", "kettle chips", "pringles", "wotsits", "quavers", "skips",
+        "monster munch", "twiglets", "hula hoops", "tortilla chips", "nachos",
+        "popcorn", "salted peanuts", "dry roasted peanuts", "cashew nuts",
+        "almonds", "walnuts", "pecans", "brazil nuts", "pistachios", "hazelnuts",
+        "mixed nuts", "trail mix", "rice cakes", "werther's originals",
+        "sultanas", "raisins", "currants", "dried apricots", "dried figs",
+        "dried cranberries", "prunes", "dates", "freeze-dried strawberries",
+        "dried mango", "banana chips", "protein powder"
+      ]
+    },
+    {
+      "name": "Health & Beauty",
+      "keywords": [
+        "shampoo", "conditioner", "shower gel", "bubble bath", "bar soap",
+        "hand soap", "hand wash", "hand sanitiser", "toothpaste", "toothbrush",
+        "mouthwash", "dental floss", "deodorant", "antiperspirant", "razors",
+        "shaving foam", "shaving gel", "aftershave", "cotton wool", "cotton buds",
+        "makeup remover", "face wipes", "sanitary towels", "tampons",
+        "panty liners", "sun cream", "after sun", "insect repellent"
+      ]
+    },
+    {
+      "name": "Medicine",
+      "keywords": [
+        "paracetamol", "ibuprofen", "aspirin", "cold and flu tablets",
+        "cough syrup", "throat lozenges", "plasters", "antiseptic cream",
+        "antihistamines", "indigestion tablets", "rehydration sachets",
+        "vitamin tablets", "multivitamins", "vitamin c tablets",
+        "vitamin d tablets", "fish oil capsules", "probiotics"
+      ]
+    },
+    {
+      "name": "Pets",
+      "keywords": [
+        "dog food", "cat food", "dog biscuits", "cat biscuits", "dog treats",
+        "cat treats", "cat litter", "bird seed", "pet food pouches"
+      ]
     }
   ],
   "shops": [
