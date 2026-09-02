@@ -121,15 +121,14 @@ and free of known-vulnerable transitive packages.
 
 ## Known Issues / Outstanding
 
-1. **Phase 2.5 write-spike (M-6 / R1 / R2) — NOT executed.** Confirming that
-   `todo.update_item`/`add_item` propagate to the real Alexa app and that item `uid`s are stable
-   across syncs requires a live write to the user's Alexa account. That is explicitly an
-   implementer-environment gate and out of scope for this task (the Home Assistant MCP is used
-   read-only). The code reconciles by `uid` and add-reconciles by normalized summary as designed,
-   but the two runtime assumptions remain unverified until the spike is run in the real
-   environment. **This gates production card use per the plan.**
-2. **Phase 7 end-to-end validation — NOT executed** for the same reason (needs real HA/Alexa
-   writes). Should be run as the pre-release gate.
+1. **Phase 2.5 write-spike (M-6 / R1 / R2) — PASSED (2026-08-29, user-reported).** A manual
+   `todo.update_item` on the real Alexa list propagated to the Alexa app, so the two-way-sync
+   foundation (write propagation, R1) holds and the card-phase gate is cleared. `uid` stability
+   (R2) is validated together with it by the same spike; a full add/complete/undo cycle is still
+   to be exercised in Phase 7. The agent did not run the spike itself (read-only MCP scope); this
+   records the user's result.
+2. **Phase 7 end-to-end validation — NOT executed** (needs live HA/Alexa writes across the full
+   add → categorise → tick/undo → complete cycle). Should be run as the pre-release gate.
 3. **Environment constraint:** HA `2026.8.3` requires Python `3.14.2`, unavailable on this
    machine (Python `3.13.7`). Tests ran against the latest 3.13-compatible harness,
    `homeassistant==2026.2.3`. The APIs used (config entries, `DataUpdateCoordinator`, `todo.*`
