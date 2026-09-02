@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-09-02
+
+### Changed
+- **The card's per-item pencil edit menu now lists categories and shops alphabetically**
+  (case-insensitive), matching the Options-flow pick-lists sorted in 0.8.1. The "No Preference"
+  and "Uncategorised" defaults stay pinned last. Card bundle rebuilt into `www/`. No backend or
+  sensor-contract change.
+
 ## [0.9.0] - 2026-09-02
 
 ### Added

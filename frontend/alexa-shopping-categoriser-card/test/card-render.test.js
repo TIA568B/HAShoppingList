@@ -166,6 +166,30 @@ test("pencil opens an edit menu with shop + category option buttons and no text 
   assert.ok(opts.includes("Milk") && opts.includes("Uncategorised"));
 });
 
+test("edit menu lists categories and shops alphabetically, sentinels pinned last", () => {
+  // Deliberately unsorted definitions; the menu must render them alphabetically.
+  const hass = makeHassWithItem([]);
+  hass.states["sensor.test"].attributes.category_definitions = [
+    { name: "Sauces", keywords: [] },
+    { name: "Alcohol", keywords: [] },
+    { name: "Milk", keywords: [] },
+    { name: "Baking", keywords: [] },
+  ];
+  hass.states["sensor.test"].attributes.shop_definitions = [
+    { name: "Tesco", keywords: [] },
+    { name: "Aldi", keywords: [] },
+    { name: "Morrisons", keywords: [] },
+  ];
+  const card = mountCard(hass);
+  const menu = openEditMenu(card);
+  const groups = menu.byClass("asc-edit-group");
+  // Group 0 is Shop, group 1 is Category (render order in _renderEditMenu).
+  const shopOpts = groups[0].byClass("asc-edit-opt").map((b) => b.text());
+  const catOpts = groups[1].byClass("asc-edit-opt").map((b) => b.text());
+  assert.deepEqual(shopOpts, ["Aldi", "Morrisons", "Tesco", "No Preference"]);
+  assert.deepEqual(catOpts, ["Alcohol", "Baking", "Milk", "Sauces", "Uncategorised"]);
+});
+
 test("choosing a shop calls assign_shop with item_text + apply_to_uid", async () => {
   const calls = [];
   const card = mountCard(makeHassWithItem(calls));

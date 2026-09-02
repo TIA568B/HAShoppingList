@@ -441,12 +441,15 @@ export class AlexaShoppingCategoriserCard extends HTMLElement {
     menu.className = "asc-edit-menu";
     menu.setAttribute("role", "menu");
 
+    // Options are sorted alphabetically (case-insensitive) so they are easy to scan; the
+    // "No Preference" / "Uncategorised" defaults are pinned last, not sorted in.
+    const byName = (a, b) => a.localeCompare(b, undefined, { sensitivity: "base" });
     const shopNames = [
-      ...(attrs.shop_definitions || []).map((s) => s.name),
+      ...(attrs.shop_definitions || []).map((s) => s.name).sort(byName),
       "No Preference",
     ];
     const catNames = [
-      ...(attrs.category_definitions || []).map((c) => c.name),
+      ...(attrs.category_definitions || []).map((c) => c.name).sort(byName),
       "Uncategorised",
     ];
 
