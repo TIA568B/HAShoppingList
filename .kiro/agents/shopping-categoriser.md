@@ -8,11 +8,13 @@ permissions:
     - capability: fs_read
       match: ["**"]
       effect: allow
+    # Allow (auto-approve) writes to the one file this agent maintains.
     - capability: fs_write
       match: ["custom_components/alexa_shopping_categoriser/default_map.json"]
       effect: allow
+    # Guard against self-modifying config or steering (deny wins over any allow).
     - capability: fs_write
-      match: ["**"]
+      match: [".kiro/**", "~/.kiro/**"]
       effect: deny
     - capability: shell
       match:
