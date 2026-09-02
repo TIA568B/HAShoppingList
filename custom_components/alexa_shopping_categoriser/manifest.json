@@ -5,6 +5,7 @@
   "codeowners": ["@davidcarson"],
   "config_flow": true,
   "dependencies": ["todo"],
+  "after_dependencies": ["frontend", "panel_custom"],
   "documentation": "https://github.com/TIA568B/HAShoppingList",
   "iot_class": "calculated",
   "integration_type": "service",

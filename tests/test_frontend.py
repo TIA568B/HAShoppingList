@@ -82,13 +82,17 @@ async def test_register_panel_registers_sidebar_panel(hass: HomeAssistant) -> No
 
     registered: list[dict] = []
 
-    def _fake_register(_hass, **kwargs):
+    async def _fake_register(_hass, **kwargs):
         registered.append(kwargs)
 
     with (
         patch.object(hass.http, "async_register_static_paths", AsyncMock()),
         patch(
-            "homeassistant.components.frontend.async_register_built_in_panel",
+            "custom_components.alexa_shopping_categoriser.frontend.async_setup_component",
+            AsyncMock(return_value=True),
+        ),
+        patch(
+            "homeassistant.components.panel_custom.async_register_panel",
             side_effect=_fake_register,
         ),
     ):
@@ -98,8 +102,9 @@ async def test_register_panel_registers_sidebar_panel(hass: HomeAssistant) -> No
     kwargs = registered[0]
     assert kwargs["frontend_url_path"] == PANEL_URL_PATH
     assert kwargs["sidebar_title"] == PANEL_TITLE
-    assert kwargs["component_name"] == "custom"
-    assert "v=1.2.3" in kwargs["config"]["_panel_custom"]["module_url"]
+    assert kwargs["webcomponent_name"] == "alexa-shopping-categoriser-panel"
+    assert kwargs["embed_iframe"] is False
+    assert "v=1.2.3" in kwargs["module_url"]
     assert hass.data[DOMAIN]["frontend_panel_registered"] is True
 
 
@@ -109,7 +114,11 @@ async def test_register_panel_is_idempotent(hass: HomeAssistant) -> None:
     register = AsyncMock()
     with (
         patch.object(hass.http, "async_register_static_paths", register),
-        patch("homeassistant.components.frontend.async_register_built_in_panel"),
+        patch(
+            "custom_components.alexa_shopping_categoriser.frontend.async_setup_component",
+            AsyncMock(return_value=True),
+        ),
+        patch("homeassistant.components.panel_custom.async_register_panel", AsyncMock()),
     ):
         await async_register_panel(hass, "1.0.0")
         await async_register_panel(hass, "1.0.0")
@@ -140,7 +149,11 @@ async def test_remove_panel_calls_frontend_remove(hass: HomeAssistant) -> None:
 
     with (
         patch.object(hass.http, "async_register_static_paths", AsyncMock()),
-        patch("homeassistant.components.frontend.async_register_built_in_panel"),
+        patch(
+            "custom_components.alexa_shopping_categoriser.frontend.async_setup_component",
+            AsyncMock(return_value=True),
+        ),
+        patch("homeassistant.components.panel_custom.async_register_panel", AsyncMock()),
     ):
         await async_register_panel(hass, "1.0.0")
 

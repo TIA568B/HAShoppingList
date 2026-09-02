@@ -14,6 +14,7 @@ from pathlib import Path
 
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.core import HomeAssistant
+from homeassistant.setup import async_setup_component
 
 from .const import DOMAIN
 
@@ -107,24 +108,28 @@ async def async_register_panel(hass: HomeAssistant, version: str) -> None:
             ]
         )
 
-        from homeassistant.components import frontend
+        # Ensure panel_custom is available. In a real HA instance frontend/panel_custom
+        # are part of default_config; this is a safety net if setup ordering left it out.
+        # It is a no-op if already set up.
+        if not await async_setup_component(hass, "panel_custom", {}):
+            _LOGGER.warning(
+                "panel_custom component unavailable; sidebar panel not registered. "
+                "The integration and card still work."
+            )
+            return
 
-        frontend.async_register_built_in_panel(
+        from homeassistant.components import panel_custom
+
+        await panel_custom.async_register_panel(
             hass,
-            component_name="custom",
+            frontend_url_path=PANEL_URL_PATH,
+            webcomponent_name=PANEL_COMPONENT_NAME,
             sidebar_title=PANEL_TITLE,
             sidebar_icon=PANEL_ICON,
-            frontend_url_path=PANEL_URL_PATH,
+            # Cache-bust with the integration version so panel updates land.
+            module_url=f"{_PANEL_URL_BASE}?v={version}",
+            embed_iframe=False,
             require_admin=False,
-            config={
-                "_panel_custom": {
-                    "name": PANEL_COMPONENT_NAME,
-                    "embed_iframe": False,
-                    "trust_external": False,
-                    # Cache-bust with the integration version so panel updates land.
-                    "module_url": f"{_PANEL_URL_BASE}?v={version}",
-                },
-            },
         )
     except Exception as err:
         _LOGGER.warning("Could not register the sidebar panel: %s", err)
