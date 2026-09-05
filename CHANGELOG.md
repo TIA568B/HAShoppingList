@@ -6,6 +6,24 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-09-05
+
+### Changed
+- **Bigger, easier-to-tap shopping list on mobile.** Rows, checkboxes, and buttons now meet
+  the 44px accessible touch-target minimum, checkboxes are noticeably larger (26px, growing to
+  30px on phones), and item/shop/category text is bigger with more generous spacing. A
+  narrow-screen (≤600px) breakpoint scales the type and targets up further so items are easier
+  to tick with a thumb in-store. Card bundle only; no backend or sensor-contract change.
+
+### Fixed
+- **More responsive when signal is poor.** Tick/undo service calls now have an 8s per-attempt
+  timeout, so a request that stalls on weak reception fails fast and the retry/backoff loop
+  takes over immediately instead of the item hanging with no feedback. Retries were increased
+  from 3 to 5 and the backoff is capped at 5s so a flaky connection gets more chances to sync
+  before surfacing an error. Completions remain complete-on-tap, so nothing is dropped even if
+  a call ultimately fails — the backend owns the end state and the next refresh reconciles.
+  Card bundle only; no backend or sensor-contract change.
+
 ## [0.9.5] - 2026-09-02
 
 ### Changed

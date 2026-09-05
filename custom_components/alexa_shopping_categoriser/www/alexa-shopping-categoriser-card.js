@@ -234,7 +234,33 @@ const ItemState = Object.freeze({
   REVERSING: "reversing",
 });
 
-const DEFAULT_RETRIES = 3;
+const DEFAULT_RETRIES = 5;
+
+// Per-attempt timeout for a source service call. On poor reception a request can otherwise
+// stall for a long time (the browser's own timeout can be tens of seconds), leaving the
+// item stuck in COMPLETING with no feedback. Failing an attempt fast lets the retry/backoff
+// loop take over quickly, so the tick feels responsive even when the network is flaky.
+const DEFAULT_ATTEMPT_TIMEOUT_MS = 8000;
+
+// Wrap a promise with a timeout. Rejects with a timeout error if `promise` has not settled
+// within `ms`. The underlying HA call may still complete server-side; that is fine — the
+// backend owns the end state (complete-on-tap) and the next inbound refresh reconciles.
+function withTimeout(promise, ms, timer, clearFn) {
+  if (!ms || ms <= 0) return promise;
+  return new Promise((resolve, reject) => {
+    const handle = timer(() => reject(new Error(`timed out after ${ms}ms`)), ms);
+    promise.then(
+      (v) => {
+        clearFn(handle);
+        resolve(v);
+      },
+      (err) => {
+        clearFn(handle);
+        reject(err);
+      },
+    );
+  });
+}
 
 class TickController {
   /**
@@ -255,6 +281,7 @@ class TickController {
     this._clearTimer = deps.clearTimer || ((h) => clearTimeout(h));
     this._sleep = deps.sleep || ((ms) => new Promise((r) => setTimeout(r, ms)));
     this._retries = deps.retries ?? DEFAULT_RETRIES;
+    this._attemptTimeoutMs = deps.attemptTimeoutMs ?? DEFAULT_ATTEMPT_TIMEOUT_MS;
     /** @type {Map<string, {state:string, name:string, timer:any}>} */
     this._items = new Map();
   }
@@ -353,9 +380,15 @@ class TickController {
 
   async _sendWithRetry(uid, status, name, action) {
     let delay = 500;
+    const maxDelay = 5000; // cap backoff so a long retry chain stays responsive
     for (let attempt = 1; attempt <= this._retries; attempt++) {
       try {
-        await this._updateItem(uid, status);
+        await withTimeout(
+          Promise.resolve(this._updateItem(uid, status)),
+          this._attemptTimeoutMs,
+          this._setTimer,
+          this._clearTimer,
+        );
         return true;
       } catch (err) {
         if (attempt >= this._retries) {
@@ -363,7 +396,7 @@ class TickController {
           return false;
         }
         await this._sleep(delay);
-        delay *= 3;
+        delay = Math.min(delay * 3, maxDelay);
       }
     }
     return false;
@@ -942,41 +975,70 @@ class AlexaShoppingCategoriserCard extends HTMLElement {
   }
 }
 
+// --min-tap is the accessible minimum touch-target size (44px, per WCAG 2.5.5 / platform
+// guidance). Rows, checkboxes and buttons are sized against it so items are comfortable to
+// tick with a thumb in-store. The narrow-screen media query scales the type and targets up
+// further on phones, where mis-taps are most likely.
 const CARD_CSS = `
-  ha-card { padding: 12px; display: block; }
+  :host { --min-tap: 44px; }
+  ha-card { padding: 12px; display: block; font-size: 1rem; }
   .asc-msg { padding: 12px; color: var(--secondary-text-color); }
-  .asc-error { background: var(--error-color, #db4437); color: white; padding: 8px;
-    border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; }
-  .asc-review { background: var(--primary-color, #03a9f4); color: white; padding: 8px;
-    border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; }
+  .asc-error { background: var(--error-color, #db4437); color: white; padding: 10px 12px;
+    border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between;
+    align-items: center; gap: 8px; }
+  .asc-review { background: var(--primary-color, #03a9f4); color: white; padding: 10px 12px;
+    border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between;
+    align-items: center; gap: 8px; }
+  .asc-error button, .asc-review button { min-height: var(--min-tap); padding: 6px 12px;
+    border-radius: 6px; cursor: pointer; }
   .asc-add { display: flex; gap: 8px; margin-bottom: 12px; }
-  .asc-add input { flex: 1; padding: 6px; }
-  .asc-shop { margin-bottom: 10px; }
-  .asc-shop-header { width: 100%; text-align: left; font-weight: 600; font-size: 1.05em;
-    background: none; border: none; cursor: pointer; padding: 6px 0; color: var(--primary-text-color);
-    display: flex; justify-content: space-between; align-items: center; }
-  .asc-focus { font-size: 0.75em; font-weight: normal; }
+  .asc-add input { flex: 1; padding: 10px 12px; font-size: 1em; min-height: var(--min-tap);
+    box-sizing: border-box; border-radius: 6px; }
+  .asc-add button { min-height: var(--min-tap); min-width: var(--min-tap); padding: 0 16px;
+    border-radius: 6px; cursor: pointer; }
+  .asc-shop { margin-bottom: 12px; }
+  .asc-shop-header { width: 100%; text-align: left; font-weight: 600; font-size: 1.15em;
+    background: none; border: none; cursor: pointer; padding: 10px 0; min-height: var(--min-tap);
+    color: var(--primary-text-color); display: flex; justify-content: space-between;
+    align-items: center; gap: 8px; }
+  .asc-focus { font-size: 0.8em; font-weight: normal; min-height: var(--min-tap);
+    padding: 6px 12px; border-radius: 6px; cursor: pointer; }
   .asc-cat { margin-left: 10px; }
   .asc-cat-header { width: 100%; text-align: left; background: none; border: none; cursor: pointer;
-    padding: 4px 0; color: var(--secondary-text-color); }
-  .asc-items { list-style: none; margin: 0; padding: 0 0 0 10px; }
-  .asc-item { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 3px 0; }
+    padding: 8px 0; min-height: var(--min-tap); font-size: 1.02em; color: var(--secondary-text-color); }
+  .asc-items { list-style: none; margin: 0; padding: 0 0 0 6px; }
+  .asc-item { display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+    padding: 6px 0; min-height: var(--min-tap); }
+  .asc-item input[type="checkbox"] { width: 26px; height: 26px; flex: 0 0 auto;
+    cursor: pointer; accent-color: var(--primary-color, #03a9f4); }
+  .asc-name { font-size: 1.05em; line-height: 1.3; }
   .asc-name.checked { text-decoration: line-through; opacity: 0.6; }
-  .asc-undo { margin-left: auto; }
+  .asc-undo { margin-left: auto; min-height: var(--min-tap); padding: 6px 14px;
+    border-radius: 6px; cursor: pointer; }
   .asc-edit { margin-left: auto; background: none; border: none; cursor: pointer;
-    font-size: 1.1em; line-height: 1; padding: 4px; color: var(--secondary-text-color); }
+    font-size: 1.3em; line-height: 1; min-width: var(--min-tap); min-height: var(--min-tap);
+    padding: 4px; color: var(--secondary-text-color); }
   .asc-undo + .asc-edit { margin-left: 0; }
   .asc-edit-menu { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 16px;
     padding: 8px 4px; margin: 4px 0; background: var(--secondary-background-color, #1c1c1c);
     border-radius: 6px; }
-  .asc-edit-group { display: flex; flex-direction: column; gap: 2px; min-width: 120px; }
-  .asc-edit-heading { font-size: 0.75em; text-transform: uppercase; opacity: 0.7; }
+  .asc-edit-group { display: flex; flex-direction: column; gap: 2px; min-width: 140px; }
+  .asc-edit-heading { font-size: 0.8em; text-transform: uppercase; opacity: 0.7; }
   .asc-edit-opt { text-align: left; background: none; border: none; cursor: pointer;
-    padding: 6px 8px; border-radius: 4px; color: var(--primary-text-color); }
+    padding: 10px 12px; min-height: var(--min-tap); border-radius: 4px; font-size: 1em;
+    color: var(--primary-text-color); }
   .asc-edit-opt:hover { background: var(--primary-color, #03a9f4); color: white; }
   .asc-edit-opt.current { font-weight: 700; }
   .asc-version { margin-top: 10px; text-align: right; font-size: 0.7em; opacity: 0.5; }
   button:focus-visible { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: 2px; }
+
+  @media (max-width: 600px) {
+    ha-card { font-size: 1.1rem; padding: 10px; }
+    .asc-item { gap: 14px; padding: 8px 0; }
+    .asc-item input[type="checkbox"] { width: 30px; height: 30px; }
+    .asc-name { font-size: 1.1em; }
+    .asc-shop-header { font-size: 1.2em; }
+  }
 `;
 
 // Expose the state enum for tests / debugging without importing internals.
