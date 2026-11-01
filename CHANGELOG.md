@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.10.3] - 2026-11-01
+
+### Fixed
+- **Undo window now correctly lasts 30 seconds.** The grace period for reversing a completed
+  item was defaulting to 9 seconds instead of 30, causing the strikethrough to disappear
+  too quickly. The default is now correctly set to 30 seconds across the backend and card.
+  Users can still tune this via Options → Display options → Grace period (8–30s range).
+
 ## [0.10.2] - 2026-11-02
 
 ### Fixed
