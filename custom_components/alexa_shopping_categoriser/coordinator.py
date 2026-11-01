@@ -120,7 +120,7 @@ class AlexaShoppingCoordinator(DataUpdateCoordinator[Projection]):
             self.store.category_map,
             self.source_entity_id,
             grace_period_seconds=grace,
-            show_completed=show_completed,
+            show_completed=True,  # Always include completed items; card filters based on grace period + show_completed option
             collapse_empty_categories=collapse,
             last_synced=dt_util.now().isoformat(),
         )

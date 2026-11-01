@@ -687,7 +687,12 @@ class AlexaShoppingCategoriserCard extends HTMLElement {
 
   _renderCategory(shop, cat, grace) {
     const items = cat.items || [];
-    const unchecked = items.filter((i) => !i.checked).length;
+    // Filter: include unchecked items always, and checked items only if show_completed=true OR they're in grace period.
+    const showCompleted = (this._attrs?.options?.show_completed) ?? false;
+    const displayItems = items.filter((i) =>
+      !i.checked || showCompleted || this._tick.isUndoable(i.uid)
+    );
+    const unchecked = displayItems.filter((i) => !i.checked).length;
     // Empty categories (zero unchecked items) are not displayed at all — no header,
     // no placeholder. This matches the header count shown to the user.
     if (unchecked === 0) return null;
@@ -710,7 +715,7 @@ class AlexaShoppingCategoriserCard extends HTMLElement {
 
     const list = document.createElement("ul");
     list.className = "asc-items";
-    for (const item of items) {
+    for (const item of displayItems) {
       list.appendChild(this._renderItem(item, grace));
     }
     wrap.appendChild(list);
