@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.10.6] - 2026-11-01
+
+### Fixed
+- **Items now correctly disappear after the undo window closes.** The `isUndoable` check
+  was returning true for items in COMPLETED state (after grace period), which prevented
+  the card's filter from hiding them even when `show_completed=false`. Also, when the
+  grace period timer expires, the item is now removed from the TickController's tracking
+  map so it's no longer considered undoable. This fixes the symptom where items required
+  multiple clicks to remove and would not disappear.
+
 ## [0.10.5] - 2026-11-01
 
 ### Fixed
