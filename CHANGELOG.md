@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.10.2] - 2026-11-02
+
+### Fixed
+- **Restored item density after 0.10.1 regression.** The 0.10.1 increase in checkbox and
+  button sizes inadvertently expanded padding and line-height, reducing visible items from a
+  dozen to four on typical screens. Checkboxes and undo buttons remain at the larger 36×36px
+  / 44×44px click targets (WCAG-accessible), but padding and line-height are tuned back so
+  that items display at a reasonable density again. The density fix is card-only; no backend
+  or sensor-contract change.
+
 ## [0.10.1] - 2026-11-01
 
 ### Changed

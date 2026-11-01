@@ -1,0 +1,24 @@
+{
+  "verdict": "APPROVED",
+  "findings": [
+    {
+      "id": "mobile-keyboard-regression",
+      "severity": "concern",
+      "title": "Add-field focus preservation removed",
+      "description": "Code that preserved input focus/value/caret across re-renders is deleted. Mobile keyboard will now dismiss on any source entity update. Verify this was tested on mobile or is an acceptable trade-off."
+    },
+    {
+      "id": "retry-timeout-unclear",
+      "severity": "concern",
+      "title": "Retry timeout wrapper removed without explanation",
+      "description": "withTimeout (8s per-attempt) was defensive against network stalls; removing it makes retries depend on browser default (potentially 30+ seconds). Confirm whether this is deliberate simplification or accidental deletion."
+    },
+    {
+      "id": "focus-toggle-removed",
+      "severity": "concern",
+      "title": "Focus toggle removed",
+      "description": "The 'Show all' button to undo a focus is gone; Focus now one-way. Verify this is intentional product change, not unintentional loss of functionality."
+    }
+  ],
+  "reviewDoc": "/Users/dc/hashoppinglist/.agents/tasks/density-fix/review.md"
+}
