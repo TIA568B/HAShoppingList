@@ -111,10 +111,6 @@ class AddReconciler {
   }
 }
 
-// The always-present default shop bucket for items with no assigned store. When focusing a
-// shop we keep this expanded too, since unassigned items can be picked up at any store.
-const NO_PREFERENCE = "No Preference";
-
 // Card-local manual collapse state, independent per shop and per category (Req 7.7).
 // Never written back to the sensor. Composes with the server auto-collapse hint:
 // - manual override (if the user has explicitly toggled) wins;
@@ -151,39 +147,10 @@ class CollapseState {
     return this._cats.has(key) ? this._cats.get(key) : autoHint;
   }
 
-  // Collapse every shop except the focused one — but always keep "No Preference" expanded
-  // too, since unassigned items can be bought at any store you're focusing on.
+  // Collapse every shop except the given one ("focus this shop").
   focusShop(focusShop, allShopNames) {
     for (const name of allShopNames) {
-      const keepOpen = name === focusShop || name === NO_PREFERENCE;
-      this._shops.set(name, !keepOpen);
-    }
-  }
-
-  // True when `focusShop` is currently focused: it is expanded and every other shop is
-  // collapsed, ignoring "No Preference" (which focus deliberately leaves open). `autoHints`
-  // maps shopName -> server hint so shops the user hasn't manually toggled are judged by
-  // their effective state.
-  isShopFocused(focusShop, allShopNames, autoHints = {}) {
-    let sawFocus = false;
-    for (const name of allShopNames) {
-      const collapsed = this.isShopCollapsed(name, !!autoHints[name]);
-      if (name === focusShop) {
-        if (collapsed) return false; // the focused shop must itself be expanded
-        sawFocus = true;
-      } else if (name === NO_PREFERENCE) {
-        continue; // focus leaves No Preference open, so its state never breaks focus
-      } else if (!collapsed) {
-        return false; // some other real shop is still expanded => not focused
-      }
-    }
-    return sawFocus;
-  }
-
-  // Expand every shop ("show all") — clears a previous focus.
-  expandAll(allShopNames) {
-    for (const name of allShopNames) {
-      this._shops.set(name, false);
+      this._shops.set(name, name !== focusShop);
     }
   }
 }
@@ -199,20 +166,12 @@ function setText(el, value) {
 }
 
 // Prevent keystrokes typed into a form field from bubbling out of the card and triggering
-// Home Assistant's global keyboard shortcuts (e.g. "c" quick-bar, "e", "a"). HA registers a
-// shortcut listener on `window` (tinykeys, via ShortcutManager); without this, typing a
-// category/shop/item name fires those shortcuts and the field is unusable.
-//
-// We register in the CAPTURE phase (as well as bubble) and use stopImmediatePropagation so
-// the event never reaches HA's window-level listener regardless of which phase HA listens in.
-// A plain bubble-phase stopPropagation is not enough if HA ever listens in the capture phase
-// (the event would reach window before our handler ran). We deliberately do NOT call
-// preventDefault, so the keystroke still lands in the input as normal text.
+// Home Assistant's global keyboard shortcuts (e.g. "c" quick-bar, "e", "a"). HA listens for
+// these on document; without this, typing a category/shop name fires shortcuts and the
+// field is unusable. We stop propagation but do NOT preventDefault, so normal typing works.
 function stopKeyboardPropagation(el) {
-  const swallow = (e) => e.stopImmediatePropagation();
   for (const type of ["keydown", "keyup", "keypress"]) {
-    el.addEventListener(type, swallow, { capture: true });
-    el.addEventListener(type, swallow);
+    el.addEventListener(type, (e) => e.stopPropagation());
   }
 }
 
@@ -234,33 +193,7 @@ const ItemState = Object.freeze({
   REVERSING: "reversing",
 });
 
-const DEFAULT_RETRIES = 5;
-
-// Per-attempt timeout for a source service call. On poor reception a request can otherwise
-// stall for a long time (the browser's own timeout can be tens of seconds), leaving the
-// item stuck in COMPLETING with no feedback. Failing an attempt fast lets the retry/backoff
-// loop take over quickly, so the tick feels responsive even when the network is flaky.
-const DEFAULT_ATTEMPT_TIMEOUT_MS = 8000;
-
-// Wrap a promise with a timeout. Rejects with a timeout error if `promise` has not settled
-// within `ms`. The underlying HA call may still complete server-side; that is fine — the
-// backend owns the end state (complete-on-tap) and the next inbound refresh reconciles.
-function withTimeout(promise, ms, timer, clearFn) {
-  if (!ms || ms <= 0) return promise;
-  return new Promise((resolve, reject) => {
-    const handle = timer(() => reject(new Error(`timed out after ${ms}ms`)), ms);
-    promise.then(
-      (v) => {
-        clearFn(handle);
-        resolve(v);
-      },
-      (err) => {
-        clearFn(handle);
-        reject(err);
-      },
-    );
-  });
-}
+const DEFAULT_RETRIES = 3;
 
 class TickController {
   /**
@@ -281,7 +214,6 @@ class TickController {
     this._clearTimer = deps.clearTimer || ((h) => clearTimeout(h));
     this._sleep = deps.sleep || ((ms) => new Promise((r) => setTimeout(r, ms)));
     this._retries = deps.retries ?? DEFAULT_RETRIES;
-    this._attemptTimeoutMs = deps.attemptTimeoutMs ?? DEFAULT_ATTEMPT_TIMEOUT_MS;
     /** @type {Map<string, {state:string, name:string, timer:any}>} */
     this._items = new Map();
   }
@@ -380,15 +312,9 @@ class TickController {
 
   async _sendWithRetry(uid, status, name, action) {
     let delay = 500;
-    const maxDelay = 5000; // cap backoff so a long retry chain stays responsive
     for (let attempt = 1; attempt <= this._retries; attempt++) {
       try {
-        await withTimeout(
-          Promise.resolve(this._updateItem(uid, status)),
-          this._attemptTimeoutMs,
-          this._setTimer,
-          this._clearTimer,
-        );
+        await this._updateItem(uid, status);
         return true;
       } catch (err) {
         if (attempt >= this._retries) {
@@ -396,7 +322,7 @@ class TickController {
           return false;
         }
         await this._sleep(delay);
-        delay = Math.min(delay * 3, maxDelay);
+        delay *= 3;
       }
     }
     return false;
@@ -586,25 +512,6 @@ class AlexaShoppingCategoriserCard extends HTMLElement {
       this._built = true;
     }
     const container = this._container;
-
-    // Preserve the add-item field across the full rebuild. `set hass` runs on ANY HA state
-    // change and re-renders by replacing all children, which would otherwise destroy the
-    // focused <input>, drop what the user typed, and (on mobile) dismiss the keyboard.
-    // Capture value + focus + caret here and restore them after the add row is rebuilt.
-    this._addFocus = null;
-    if (this._addInput) {
-      const active = this.shadowRoot.activeElement === this._addInput;
-      this._addFocus = {
-        value: this._addInput.value,
-        focused: active,
-        start: active ? this._addInput.selectionStart : null,
-        end: active ? this._addInput.selectionEnd : null,
-      };
-    }
-    // The current input node is about to be detached; drop the reference so an early-return
-    // render path (unavailable/empty) can't later read a stale, detached element.
-    this._addInput = null;
-
     // Clear children (rebuild body). Style node persists on the shadow root.
     container.replaceChildren();
 
@@ -640,14 +547,10 @@ class AlexaShoppingCategoriserCard extends HTMLElement {
       );
     }
     const allShopNames = groups.map((g) => g.name);
-    // Server auto-collapse hints per shop, so Focus's toggle can judge effective state for
-    // shops the user hasn't manually toggled.
-    const shopAutoHints = {};
-    for (const g of groups) shopAutoHints[g.name] = !!g.collapsed;
 
     let renderedShops = 0;
     for (const shop of groups) {
-      const el = this._renderShop(shop, grace, allShopNames, shopAutoHints);
+      const el = this._renderShop(shop, grace, allShopNames);
       if (el !== null) {
         container.appendChild(el);
         renderedShops += 1;
@@ -721,8 +624,6 @@ class AlexaShoppingCategoriserCard extends HTMLElement {
     input.placeholder = "Add an item…";
     input.setAttribute("aria-label", "Add an item");
     stopKeyboardPropagation(input);
-    // Keep a live reference so _render can carry value/focus/caret across a rebuild.
-    this._addInput = input;
     const add = document.createElement("button");
     setText(add, "Add");
     const submit = () => {
@@ -737,27 +638,9 @@ class AlexaShoppingCategoriserCard extends HTMLElement {
     });
     row.append(input, add);
     container.appendChild(row);
-
-    // Restore what the user had typed and, if the field was focused before the rebuild,
-    // re-focus it and restore the caret. This is what stops a background HA state update
-    // from dismissing the mobile keyboard mid-typing.
-    const saved = this._addFocus;
-    if (saved) {
-      input.value = saved.value;
-      if (saved.focused) {
-        input.focus();
-        if (saved.start != null) {
-          try {
-            input.setSelectionRange(saved.start, saved.end);
-          } catch {
-            // setSelectionRange throws for some input types/states; caret restore is best-effort.
-          }
-        }
-      }
-    }
   }
 
-  _renderShop(shop, grace, allShopNames, shopAutoHints = {}) {
+  _renderShop(shop, grace, allShopNames) {
     const section = document.createElement("section");
     section.className = "asc-shop";
 
@@ -777,26 +660,12 @@ class AlexaShoppingCategoriserCard extends HTMLElement {
     });
     section.appendChild(header);
 
-    // Focus is a toggle: focus this shop (collapse the rest), and if it is already the only
-    // expanded shop, tapping again expands everything ("Show all"). Without the toggle there
-    // was no way to undo a focus from the button — the other shops stayed collapsed.
-    const isFocused = this._collapse.isShopFocused(shop.name, allShopNames, shopAutoHints);
     const focus = document.createElement("button");
     focus.className = "asc-focus";
-    setText(focus, isFocused ? "Show all" : "Focus");
-    focus.setAttribute(
-      "aria-label",
-      isFocused ? "Show all shops" : `Focus ${shop.name}`,
-    );
-    focus.setAttribute("aria-pressed", String(isFocused));
-    focus.addEventListener("click", (e) => {
-      // Don't let the click also toggle the header's collapse.
-      e.stopPropagation();
-      if (isFocused) {
-        this._collapse.expandAll(allShopNames);
-      } else {
-        this._collapse.focusShop(shop.name, allShopNames);
-      }
+    setText(focus, "Focus");
+    focus.setAttribute("aria-label", `Focus ${shop.name}`);
+    focus.addEventListener("click", () => {
+      this._collapse.focusShop(shop.name, allShopNames);
       this._render();
     });
     header.appendChild(focus);
@@ -975,72 +844,45 @@ class AlexaShoppingCategoriserCard extends HTMLElement {
   }
 }
 
-// --min-tap is the accessible minimum touch-target size (44px, per WCAG 2.5.5 / platform
-// guidance). Rows, checkboxes and buttons are sized against it so items are comfortable to
-// tick with a thumb in-store. The narrow-screen media query scales the type and targets up
-// further on phones, where mis-taps are most likely.
 const CARD_CSS = `
-  :host { --min-tap: 44px; }
-  ha-card { padding: 12px; display: block; font-size: 1rem; }
-  .asc-msg { padding: 12px; color: var(--secondary-text-color); }
-  .asc-error { background: var(--error-color, #db4437); color: white; padding: 10px 12px;
-    border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between;
-    align-items: center; gap: 8px; }
-  .asc-review { background: var(--primary-color, #03a9f4); color: white; padding: 10px 12px;
-    border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between;
-    align-items: center; gap: 8px; }
-  .asc-error button, .asc-review button { min-height: var(--min-tap); padding: 6px 12px;
-    border-radius: 6px; cursor: pointer; }
-  .asc-add { display: flex; gap: 8px; margin-bottom: 12px; }
-  .asc-add input { flex: 1; padding: 10px 12px; font-size: 1em; min-height: var(--min-tap);
-    box-sizing: border-box; border-radius: 6px; }
-  .asc-add button { min-height: var(--min-tap); min-width: var(--min-tap); padding: 0 16px;
-    border-radius: 6px; cursor: pointer; }
-  .asc-shop { margin-bottom: 12px; }
-  .asc-shop-header { width: 100%; text-align: left; font-weight: 600; font-size: 1.15em;
-    background: none; border: none; cursor: pointer; padding: 10px 0; min-height: var(--min-tap);
-    color: var(--primary-text-color); display: flex; justify-content: space-between;
-    align-items: center; gap: 8px; }
-  .asc-focus { font-size: 0.8em; font-weight: normal; min-height: var(--min-tap);
-    padding: 6px 12px; border-radius: 6px; cursor: pointer; }
-  .asc-cat { margin-left: 10px; }
+  ha-card { padding: 8px; display: block; }
+  .asc-msg { padding: 8px; color: var(--secondary-text-color); }
+  .asc-error { background: var(--error-color, #db4437); color: white; padding: 6px 8px;
+    border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between; gap: 6px; align-items: center; }
+  .asc-review { background: var(--primary-color, #03a9f4); color: white; padding: 6px 8px;
+    border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between; gap: 6px; align-items: center; }
+  .asc-error button, .asc-review button { padding: 4px 8px; border-radius: 4px; cursor: pointer; border: none; background: rgba(255,255,255,0.2); color: white; }
+  .asc-add { display: flex; gap: 6px; margin-bottom: 8px; }
+  .asc-add input { flex: 1; padding: 6px 8px; border-radius: 4px; border: 1px solid var(--divider-color, #e0e0e0); }
+  .asc-add button { padding: 6px 12px; border-radius: 4px; cursor: pointer; background: var(--primary-color, #03a9f4); color: white; border: none; }
+  .asc-shop { margin-bottom: 8px; }
+  .asc-shop-header { width: 100%; text-align: left; font-weight: 600; font-size: 1em;
+    background: none; border: none; cursor: pointer; padding: 4px 0; color: var(--primary-text-color);
+    display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+  .asc-focus { font-size: 0.7em; font-weight: normal; padding: 2px 6px; border-radius: 3px; cursor: pointer; background: var(--primary-color, #03a9f4); color: white; border: none; }
+  .asc-cat { margin-left: 6px; }
   .asc-cat-header { width: 100%; text-align: left; background: none; border: none; cursor: pointer;
-    padding: 8px 0; min-height: var(--min-tap); font-size: 1.02em; color: var(--secondary-text-color); }
-  .asc-items { list-style: none; margin: 0; padding: 0 0 0 6px; }
-  .asc-item { display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
-    padding: 4px 0; min-height: auto; }
-  .asc-item input[type="checkbox"] { width: 36px; height: 36px; flex: 0 0 auto;
-    cursor: pointer; accent-color: var(--primary-color, #03a9f4); padding: 4px;
-    box-sizing: content-box; min-width: var(--min-tap); min-height: var(--min-tap); }
-  .asc-name { font-size: 1.05em; line-height: 1.3; }
-  .asc-name.checked { text-decoration: line-through; opacity: 0.5; color: var(--disabled-text-color, rgba(0,0,0,0.38)); }
-  .asc-undo { margin-left: auto; min-height: var(--min-tap); padding: 8px 16px;
-    border-radius: 6px; cursor: pointer; font-weight: 500; background: var(--primary-color, #03a9f4);
-    color: white; border: none; }
+    padding: 2px 0; font-size: 0.95em; color: var(--secondary-text-color); }
+  .asc-items { list-style: none; margin: 0; padding: 0 0 0 4px; }
+  .asc-item { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 2px 0; }
+  .asc-item input[type="checkbox"] { width: 28px; height: 28px; flex: 0 0 auto; cursor: pointer; accent-color: var(--primary-color, #03a9f4); }
+  .asc-name { font-size: 0.95em; line-height: 1.2; }
+  .asc-name.checked { text-decoration: line-through; opacity: 0.55; }
+  .asc-undo { margin-left: auto; padding: 2px 6px; font-size: 0.85em; border-radius: 3px; cursor: pointer; background: var(--primary-color, #03a9f4); color: white; border: none; }
   .asc-edit { margin-left: auto; background: none; border: none; cursor: pointer;
-    font-size: 1.3em; line-height: 1; min-width: var(--min-tap); min-height: var(--min-tap);
-    padding: 4px; color: var(--secondary-text-color); }
+    font-size: 1em; line-height: 1; padding: 2px 4px; color: var(--secondary-text-color); }
   .asc-undo + .asc-edit { margin-left: 0; }
-  .asc-edit-menu { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 16px;
-    padding: 8px 4px; margin: 4px 0; background: var(--secondary-background-color, #1c1c1c);
-    border-radius: 6px; }
-  .asc-edit-group { display: flex; flex-direction: column; gap: 2px; min-width: 140px; }
-  .asc-edit-heading { font-size: 0.8em; text-transform: uppercase; opacity: 0.7; }
+  .asc-edit-menu { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 12px;
+    padding: 6px 4px; margin: 2px 0; background: var(--secondary-background-color, #1c1c1c);
+    border-radius: 4px; }
+  .asc-edit-group { display: flex; flex-direction: column; gap: 1px; min-width: 100px; }
+  .asc-edit-heading { font-size: 0.7em; text-transform: uppercase; opacity: 0.65; }
   .asc-edit-opt { text-align: left; background: none; border: none; cursor: pointer;
-    padding: 10px 12px; min-height: var(--min-tap); border-radius: 4px; font-size: 1em;
-    color: var(--primary-text-color); }
+    padding: 4px 6px; border-radius: 3px; font-size: 0.9em; color: var(--primary-text-color); }
   .asc-edit-opt:hover { background: var(--primary-color, #03a9f4); color: white; }
   .asc-edit-opt.current { font-weight: 700; }
-  .asc-version { margin-top: 10px; text-align: right; font-size: 0.7em; opacity: 0.5; }
-  button:focus-visible { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: 2px; }
-
-  @media (max-width: 600px) {
-    ha-card { font-size: 1.1rem; padding: 10px; }
-    .asc-item { gap: 14px; padding: 8px 0; }
-    .asc-item input[type="checkbox"] { width: 40px; height: 40px; min-width: var(--min-tap); min-height: var(--min-tap); }
-    .asc-name { font-size: 1.1em; }
-    .asc-shop-header { font-size: 1.2em; }
-  }
+  .asc-version { margin-top: 6px; text-align: right; font-size: 0.65em; opacity: 0.5; }
+  button:focus-visible { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: 1px; }
 `;
 
 // Expose the state enum for tests / debugging without importing internals.

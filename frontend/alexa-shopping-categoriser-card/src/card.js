@@ -511,40 +511,44 @@ export class AlexaShoppingCategoriserCard extends HTMLElement {
 }
 
 const CARD_CSS = `
-  ha-card { padding: 12px; display: block; }
-  .asc-msg { padding: 12px; color: var(--secondary-text-color); }
-  .asc-error { background: var(--error-color, #db4437); color: white; padding: 8px;
-    border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; }
-  .asc-review { background: var(--primary-color, #03a9f4); color: white; padding: 8px;
-    border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; }
-  .asc-add { display: flex; gap: 8px; margin-bottom: 12px; }
-  .asc-add input { flex: 1; padding: 6px; }
-  .asc-shop { margin-bottom: 10px; }
-  .asc-shop-header { width: 100%; text-align: left; font-weight: 600; font-size: 1.05em;
-    background: none; border: none; cursor: pointer; padding: 6px 0; color: var(--primary-text-color);
-    display: flex; justify-content: space-between; align-items: center; }
-  .asc-focus { font-size: 0.75em; font-weight: normal; }
-  .asc-cat { margin-left: 10px; }
+  ha-card { padding: 8px; display: block; }
+  .asc-msg { padding: 8px; color: var(--secondary-text-color); }
+  .asc-error { background: var(--error-color, #db4437); color: white; padding: 6px 8px;
+    border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between; gap: 6px; align-items: center; }
+  .asc-review { background: var(--primary-color, #03a9f4); color: white; padding: 6px 8px;
+    border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between; gap: 6px; align-items: center; }
+  .asc-error button, .asc-review button { padding: 4px 8px; border-radius: 4px; cursor: pointer; border: none; background: rgba(255,255,255,0.2); color: white; }
+  .asc-add { display: flex; gap: 6px; margin-bottom: 8px; }
+  .asc-add input { flex: 1; padding: 6px 8px; border-radius: 4px; border: 1px solid var(--divider-color, #e0e0e0); }
+  .asc-add button { padding: 6px 12px; border-radius: 4px; cursor: pointer; background: var(--primary-color, #03a9f4); color: white; border: none; }
+  .asc-shop { margin-bottom: 8px; }
+  .asc-shop-header { width: 100%; text-align: left; font-weight: 600; font-size: 1em;
+    background: none; border: none; cursor: pointer; padding: 4px 0; color: var(--primary-text-color);
+    display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+  .asc-focus { font-size: 0.7em; font-weight: normal; padding: 2px 6px; border-radius: 3px; cursor: pointer; background: var(--primary-color, #03a9f4); color: white; border: none; }
+  .asc-cat { margin-left: 6px; }
   .asc-cat-header { width: 100%; text-align: left; background: none; border: none; cursor: pointer;
-    padding: 4px 0; color: var(--secondary-text-color); }
-  .asc-items { list-style: none; margin: 0; padding: 0 0 0 10px; }
-  .asc-item { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 3px 0; }
-  .asc-name.checked { text-decoration: line-through; opacity: 0.6; }
-  .asc-undo { margin-left: auto; }
+    padding: 2px 0; font-size: 0.95em; color: var(--secondary-text-color); }
+  .asc-items { list-style: none; margin: 0; padding: 0 0 0 4px; }
+  .asc-item { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 2px 0; }
+  .asc-item input[type="checkbox"] { width: 28px; height: 28px; flex: 0 0 auto; cursor: pointer; accent-color: var(--primary-color, #03a9f4); }
+  .asc-name { font-size: 0.95em; line-height: 1.2; }
+  .asc-name.checked { text-decoration: line-through; opacity: 0.55; }
+  .asc-undo { margin-left: auto; padding: 2px 6px; font-size: 0.85em; border-radius: 3px; cursor: pointer; background: var(--primary-color, #03a9f4); color: white; border: none; }
   .asc-edit { margin-left: auto; background: none; border: none; cursor: pointer;
-    font-size: 1.1em; line-height: 1; padding: 4px; color: var(--secondary-text-color); }
+    font-size: 1em; line-height: 1; padding: 2px 4px; color: var(--secondary-text-color); }
   .asc-undo + .asc-edit { margin-left: 0; }
-  .asc-edit-menu { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 16px;
-    padding: 8px 4px; margin: 4px 0; background: var(--secondary-background-color, #1c1c1c);
-    border-radius: 6px; }
-  .asc-edit-group { display: flex; flex-direction: column; gap: 2px; min-width: 120px; }
-  .asc-edit-heading { font-size: 0.75em; text-transform: uppercase; opacity: 0.7; }
+  .asc-edit-menu { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 12px;
+    padding: 6px 4px; margin: 2px 0; background: var(--secondary-background-color, #1c1c1c);
+    border-radius: 4px; }
+  .asc-edit-group { display: flex; flex-direction: column; gap: 1px; min-width: 100px; }
+  .asc-edit-heading { font-size: 0.7em; text-transform: uppercase; opacity: 0.65; }
   .asc-edit-opt { text-align: left; background: none; border: none; cursor: pointer;
-    padding: 6px 8px; border-radius: 4px; color: var(--primary-text-color); }
+    padding: 4px 6px; border-radius: 3px; font-size: 0.9em; color: var(--primary-text-color); }
   .asc-edit-opt:hover { background: var(--primary-color, #03a9f4); color: white; }
   .asc-edit-opt.current { font-weight: 700; }
-  .asc-version { margin-top: 10px; text-align: right; font-size: 0.7em; opacity: 0.5; }
-  button:focus-visible { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: 2px; }
+  .asc-version { margin-top: 6px; text-align: right; font-size: 0.65em; opacity: 0.5; }
+  button:focus-visible { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: 1px; }
 `;
 
 // Expose the state enum for tests / debugging without importing internals.
