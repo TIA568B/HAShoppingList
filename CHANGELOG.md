@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.10.4] - 2026-11-01
+
+### Fixed
+- **Undo window now persists correctly.** Completed items were being filtered out by the
+  backend's `show_completed=false` setting within 1-2 seconds of marking them done, causing
+  the strikethrough to disappear before the undo button became available. The backend now
+  always includes completed items in the sensor attributes, and the card filters based on
+  both the grace period (undo window) and the `show_completed` option. Items now stay
+  visible for the full 30-second undo window regardless of the `show_completed` setting.
+
 ## [0.10.3] - 2026-11-01
 
 ### Fixed
