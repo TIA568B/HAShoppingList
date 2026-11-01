@@ -87,9 +87,6 @@ def build_projection(
     uncategorised_count = 0
 
     for ci in categorised:
-        if ci.checked and not show_completed:
-            # Still counts toward "done" auto-collapse but is not listed.
-            pass
         shop_bucket = grouped.setdefault(ci.shop, {})
         cat_bucket = shop_bucket.setdefault(ci.category, [])
 
@@ -101,9 +98,8 @@ def build_projection(
             if ci.category == UNCATEGORISED:
                 uncategorised_count += 1
 
-        if ci.checked and not show_completed:
-            continue
-
+        # Always include items in the projection (both checked and unchecked).
+        # The card will filter based on show_completed + grace period.
         cat_bucket.append(
             {
                 "uid": ci.uid,
