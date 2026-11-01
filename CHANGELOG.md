@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.10.5] - 2026-11-01
+
+### Fixed
+- **Completed items no longer persist after grace period ends.** The previous fix to preserve
+  items during the undo window inadvertently kept all completed items visible indefinitely,
+  even after the 30-second grace period expired. The backend now always includes completed
+  items in the projection, and the card correctly filters them based on:
+  1. Grace period window (undo button visible → item shown with strikethrough)
+  2. `show_completed` option (after grace period ends, hidden if `show_completed=false`)
+  Items now correctly disappear after 30 seconds as originally intended.
+
 ## [0.10.4] - 2026-11-01
 
 ### Fixed
