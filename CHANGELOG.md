@@ -6,6 +6,19 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-11-01
+
+### Changed
+- **Tick boxes are now larger and easier to tap.** Checkboxes increased from 26×26px to
+  36×36px (40×40px on mobile) with a full 44×44px clickable area that exceeds WCAG
+  accessibility minimums. Touch targets are now reliably easy to hit in-store, especially
+  on phones. Card bundle only; no backend or sensor-contract change.
+- **Completed items show strikethrough with 30-second undo.** When an item is marked done,
+  it now displays struck through (not removed), with a prominent **Undo** button visible for
+  30 seconds. After 30 seconds the item disappears from the list automatically. Undo works
+  for the full window and reverts the item to unchecked. Complete-on-tap and sync semantics
+  are unchanged. Card bundle only; no backend or sensor-contract change.
+
 ## [0.10.0] - 2026-09-05
 
 ### Changed
