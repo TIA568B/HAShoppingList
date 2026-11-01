@@ -227,7 +227,7 @@ class TickController {
   /** True while the undo affordance should be shown for this uid. */
   isUndoable(uid) {
     const s = this.getState(uid);
-    return s === ItemState.UNDO_WINDOW || s === ItemState.COMPLETED;
+    return s === ItemState.UNDO_WINDOW;
   }
 
   /**
@@ -303,8 +303,9 @@ class TickController {
     const timer = this._setTimer(() => {
       const entry = this._items.get(uid);
       if (entry && entry.state === ItemState.UNDO_WINDOW) {
-        // Window expired: completion stands; drop the affordance (no extra call).
-        this._set(uid, { state: ItemState.COMPLETED, name, timer: null });
+        // Window expired: completion stands; remove from tracking so it's no longer considered undoable.
+        this._clear(uid);
+        this._onChange();
       }
     }, ms);
     this._set(uid, { state: ItemState.UNDO_WINDOW, name, timer });
