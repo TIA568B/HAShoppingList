@@ -299,7 +299,7 @@ class TickController {
   // --- internals --------------------------------------------------------
 
   _startUndoWindow(uid, name, gracePeriodSeconds) {
-    const ms = Math.max(1, Number(gracePeriodSeconds) || 9) * 1000;
+    const ms = Math.max(1, Number(gracePeriodSeconds) || 30) * 1000;
     const timer = this._setTimer(() => {
       const entry = this._items.get(uid);
       if (entry && entry.state === ItemState.UNDO_WINDOW) {
@@ -539,7 +539,7 @@ class AlexaShoppingCategoriserCard extends HTMLElement {
     this._renderReviewBanner(container, attrs);
     this._renderAddRow(container);
 
-    const grace = (attrs.options && attrs.options.grace_period_seconds) || 9;
+    const grace = (attrs.options && attrs.options.grace_period_seconds) || 30;
     let groups = [...(attrs.shop_groups || [])];
     if (this._config.no_preference_position === "first") {
       groups = groups.sort((a, b) =>
